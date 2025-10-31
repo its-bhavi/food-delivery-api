@@ -162,6 +162,41 @@ CORS_ALLOWED_ORIGINS = [
 
 CORS_ALLOW_ALL_ORIGINS = True  # Development ke liye - baad mein change karenge
 
+# Additional CORS Settings for WordPress
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
+
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
+
+CORS_ALLOW_CREDENTIALS = True
+
+
+# CSRF Settings for API
+CSRF_COOKIE_SECURE = False  # Development only
+CSRF_COOKIE_HTTPONLY = False
+CSRF_TRUSTED_ORIGINS = [
+    'https://*.onrender.com',
+    'https://*.hostingersite.com',  # Add your WordPress domain
+    'http://localhost:8000',
+]
+
+
 
 # REST Framework Settings
 REST_FRAMEWORK = {
