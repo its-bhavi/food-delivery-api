@@ -27,3 +27,15 @@ staticfiles/
 # OS
 .DS_Store
 Thumbs.db
+
+# Production
+staticfiles/
+.env
+*.log
+
+# Database
+db.sqlite3
+*.sqlite3
+
+# Render
+render.yaml
