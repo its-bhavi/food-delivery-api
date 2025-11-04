@@ -56,8 +56,8 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
-    'corsheaders.middleware.CorsMiddleware',  # ✅ YEH ADD KARO (2nd position pe)
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # Static files
+    'corsheaders.middleware.CorsMiddleware',  # ✅ CORS - 3rd position important!
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -155,11 +155,17 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 # CORS Settings
+# CORS Configuration - Allow WordPress Domain
+CORS_ALLOW_ALL_ORIGINS = True  # ✅ TEMPORARY - Allow ALL domains
 
+# Production mein specific domains add karo
+CORS_ALLOWED_ORIGINS = [
+    "https://lightskyblue-ostrich-354680.hostingersite.com",  # ✅ WordPress domain
+    "http://localhost:3000",
+    "http://127.0.0.1:8000",
+    "https://food-delivery-api-fr4f.onrender.com",  # ✅ Render domain
+]
 
-CORS_ALLOW_ALL_ORIGINS = True  # Development ke liye - baad mein change karenge
-
-# Additional CORS Settings for WordPress
 CORS_ALLOW_METHODS = [
     'DELETE',
     'GET',
@@ -184,14 +190,15 @@ CORS_ALLOW_HEADERS = [
 CORS_ALLOW_CREDENTIALS = True
 
 
+
 # CSRF Settings for API
-CSRF_COOKIE_SECURE = False  # Development only
-CSRF_COOKIE_HTTPONLY = False
 CSRF_TRUSTED_ORIGINS = [
-    'https://*.onrender.com',
-    'https://*.hostingersite.com',  # Add your WordPress domain
+    'https://lightskyblue-ostrich-354680.hostingersite.com',  # ✅ WordPress
+    'https://*.hostingersite.com',  # ✅ All Hostinger subdomains
+    'https://*.onrender.com',  # ✅ Render
     'http://localhost:8000',
 ]
+
 
 
 
@@ -246,7 +253,3 @@ SIMPLE_JWT = {
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-
-CSRF_TRUSTED_ORIGINS = [
-    'https://*.onrender.com',
-]
