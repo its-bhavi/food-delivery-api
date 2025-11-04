@@ -192,13 +192,48 @@ CORS_ALLOW_CREDENTIALS = True
 
 
 # CSRF Settings for API
-CSRF_TRUSTED_ORIGINS = [
-    'https://lightskyblue-ostrich-354680.hostingersite.com',  # ✅ WordPress
-    'https://*.hostingersite.com',  # ✅ All Hostinger subdomains
-    'https://*.onrender.com',  # ✅ Render
-    'http://localhost:8000',
+# CORS Configuration - WordPress Domain Allow
+CORS_ALLOW_ALL_ORIGINS = True  # ✅ Testing ke liye
+
+CORS_ALLOWED_ORIGINS = [
+    "https://lightskyblue-ostrich-354680.hostingersite.com",  # WordPress
+    "https://food-delivery-api-fr4f.onrender.com",  # ✅ YOUR ACTUAL RENDER URL
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
 ]
 
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
+
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+    'access-control-allow-origin',
+]
+
+CORS_ALLOW_CREDENTIALS = True
+CORS_PREFLIGHT_MAX_AGE = 86400  # 24 hours
+
+CSRF_TRUSTED_ORIGINS = [
+    'https://lightskyblue-ostrich-354680.hostingersite.com',
+    'https://*.hostingersite.com',
+    'https://food-delivery-api-fr4f.onrender.com',  # ✅ YOUR URL
+    'https://*.onrender.com',
+    'http://localhost:8000',
+]
 
 
 
