@@ -91,11 +91,13 @@ WSGI_APPLICATION = 'food_delivery_api.wsgi.application'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 # Database Configuration
-if os.getenv('DATABASE_URL'):
+DATABASE_URL = os.getenv('DATABASE_URL')
+
+if DATABASE_URL:
     # Production - Render PostgreSQL
     DATABASES = {
         'default': dj_database_url.config(
-            default=os.getenv('DATABASE_URL'),
+            default=DATABASE_URL,
             conn_max_age=600,
             conn_health_checks=True,
         )
