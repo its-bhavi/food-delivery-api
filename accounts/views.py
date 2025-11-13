@@ -11,7 +11,7 @@ from .serializers import (
 )
 
 
-class UserRegistrationAPIView(generics.CreateAPIView):
+class UserRegistrationView(generics.CreateAPIView):
     """
     User Registration API
     POST /api/accounts/register/
@@ -29,9 +29,9 @@ class UserRegistrationAPIView(generics.CreateAPIView):
     permission_classes = [AllowAny]
 
 
-class AccountAPIView(APIView):
+class UserProfileView(APIView):
     """
-    Get or Update User Account
+    Get or Update User Account Profile
     GET /api/accounts/profile/
     PUT /api/accounts/profile/
     Body: {
@@ -58,14 +58,51 @@ class AccountAPIView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class UserDetailAPIView(generics.RetrieveUpdateAPIView):
+class CheckUsernameView(APIView):
     """
-    Get or Update User Details
-    GET /api/accounts/me/
-    PUT /api/accounts/me/
+    Check if username is available
+    POST /api/accounts/check-username/
+    Body: {
+        "username": "john_doe"
+    }
+    Response: {
+        "available": true/false
+    }
     """
-    serializer_class = UserSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     
-    def get_object(self):
-        return self.request.user
+    def post(self, request):
+        username = request.data.get('username')
+        if not username:
+            return Response(
+                {'error': 'Username is required'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        available = not User.objects.filter(username=username).exists()
+        return Response({'available': available})
+
+
+class CheckPhoneView(APIView):
+    """
+    Check if phone number is available
+    POST /api/accounts/check-phone/
+    Body: {
+        "phone_number": "1234567890"
+    }
+    Response: {
+        "available": true/false
+    }
+    """
+    permission_classes = [AllowAny]
+    
+    def post(self, request):
+        phone_number = request.data.get('phone_number')
+        if not phone_number:
+            return Response(
+                {'error': 'Phone number is required'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        available = not Account.objects.filter(phone_number=phone_number).exists()
+        return Response({'available': available})
