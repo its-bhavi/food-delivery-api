@@ -20,6 +20,8 @@ urlpatterns = [
     path('api/vendors/', include('vendors.urls')),
     path('api/orders/', include('orders.urls')),
     path('api/delivery/', include('delivery.urls')),
+    path('api/accounts/', include('accounts.urls')),  # This makes /api/register/ work
+
     
     # Razorpay Payment Routes
     path('api/payments/razorpay-order/', RazorpayOrderAPIView.as_view(), name='razorpay-order'),
