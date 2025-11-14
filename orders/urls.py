@@ -5,6 +5,7 @@ urlpatterns = [
     # Customer APIs
     path('my-orders/', views.my_orders, name='my-orders'),
     path('create/', views.create_order, name='create-order'),
+    path('status/', views.order_status_by_number, name='order-status-by-number'),  # ?order=ORD123
     
     # Dashboard APIs
     path('vendor-orders/', views.vendor_orders, name='vendor-orders'),

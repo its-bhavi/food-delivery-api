@@ -243,3 +243,34 @@ def order_realtime_status(request, order_id):
         
     except Order.DoesNotExist:
         return Response({'error': 'Order not found'}, status=404)
+
+
+# ========================================
+# GET ORDER BY ORDER NUMBER
+# ========================================
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def order_status_by_number(request):
+    """Get order status by order number (query param)"""
+    order_number = request.GET.get('order')
+    
+    if not order_number:
+        return Response({'error': 'Order number is required'}, status=400)
+    
+    try:
+        order = Order.objects.select_related(
+            'restaurant', 'customer'
+        ).prefetch_related('items__menu_item').get(order_number=order_number)
+        
+        # Check authorization
+        user = request.user
+        if order.customer != user:
+            # Allow restaurant owner to view too
+            if not (hasattr(order.restaurant, 'owner') and order.restaurant.owner == user):
+                return Response({'error': 'Unauthorized'}, status=403)
+        
+        serializer = OrderDetailSerializer(order)
+        return Response(serializer.data)
+        
+    except Order.DoesNotExist:
+        return Response({'error': 'Order not found'}, status=404)
