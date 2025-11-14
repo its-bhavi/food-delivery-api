@@ -33,7 +33,30 @@ def create_order(request):
         except Restaurant.DoesNotExist:
             return Response({'error': 'Restaurant not found'}, status=404)
         
-        # Create order
+        # ✅ First calculate total from items
+        total_amount = 0
+        validated_items = []
+        
+        for item_data in data['items']:
+            try:
+                menu_item = MenuItem.objects.get(id=item_data['menu_item_id'])
+                quantity = int(item_data['quantity'])
+                price = float(item_data['price'])
+                
+                validated_items.append({
+                    'menu_item': menu_item,
+                    'quantity': quantity,
+                    'price': price
+                })
+                
+                total_amount += price * quantity
+                
+            except MenuItem.DoesNotExist:
+                return Response({'error': f'Menu item {item_data["menu_item_id"]} not found'}, status=404)
+            except (ValueError, KeyError):
+                return Response({'error': 'Invalid item data'}, status=400)
+        
+        # ✅ Create order with calculated total
         order = Order.objects.create(
             customer=user,
             restaurant=restaurant,
@@ -43,36 +66,18 @@ def create_order(request):
             instructions=data.get('instructions', ''),
             order_number=data.get('order_number', f'ORD{Order.objects.count() + 1}'),
             payment_id=data.get('payment_id', ''),
+            total_amount=total_amount,  # ✅ Set total at creation
             status='pending'
         )
         
-        # Add order items
-        total_amount = 0
-        for item_data in data['items']:
-            try:
-                menu_item = MenuItem.objects.get(id=item_data['menu_item_id'])
-                quantity = int(item_data['quantity'])
-                price = float(item_data['price'])
-                
-                OrderItem.objects.create(
-                    order=order,
-                    menu_item=menu_item,
-                    quantity=quantity,
-                    price=price
-                )
-                
-                total_amount += price * quantity
-                
-            except MenuItem.DoesNotExist:
-                order.delete()
-                return Response({'error': f'Menu item {item_data["menu_item_id"]} not found'}, status=404)
-            except (ValueError, KeyError):
-                order.delete()
-                return Response({'error': 'Invalid item data'}, status=400)
-        
-        # Update order total
-        order.total_amount = total_amount
-        order.save()
+        # ✅ Add validated order items
+        for item in validated_items:
+            OrderItem.objects.create(
+                order=order,
+                menu_item=item['menu_item'],
+                quantity=item['quantity'],
+                price=item['price']
+            )
         
         # Return order details
         serializer = OrderDetailSerializer(order)
@@ -80,6 +85,7 @@ def create_order(request):
         
     except Exception as e:
         return Response({'error': str(e)}, status=500)
+
 
 
 # ========================================
