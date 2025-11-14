@@ -3,10 +3,84 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
+from django.contrib.auth.models import User
 
-from vendors.models import Restaurant  # ✅ Fixed: vendors (not restaurants)
-from .models import Order
+from vendors.models import Restaurant, MenuItem  # ✅ Fixed: vendors (not restaurants)
+from .models import Order, OrderItem
 from .serializers import OrderDetailSerializer  # ✅ Fixed: Use OrderDetailSerializer
+
+
+# ========================================
+# CREATE ORDER API
+# ========================================
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_order(request):
+    """Create a new order"""
+    try:
+        user = request.user
+        data = request.data
+        
+        # Validate required fields
+        required_fields = ['restaurant', 'delivery_address', 'customer_phone', 'payment_method', 'items']
+        for field in required_fields:
+            if field not in data:
+                return Response({'error': f'{field} is required'}, status=400)
+        
+        # Get restaurant
+        try:
+            restaurant = Restaurant.objects.get(id=data['restaurant'])
+        except Restaurant.DoesNotExist:
+            return Response({'error': 'Restaurant not found'}, status=404)
+        
+        # Create order
+        order = Order.objects.create(
+            customer=user,
+            restaurant=restaurant,
+            delivery_address=data['delivery_address'],
+            customer_phone=data['customer_phone'],
+            payment_method=data['payment_method'],
+            instructions=data.get('instructions', ''),
+            order_number=data.get('order_number', f'ORD{Order.objects.count() + 1}'),
+            payment_id=data.get('payment_id', ''),
+            status='pending'
+        )
+        
+        # Add order items
+        total_amount = 0
+        for item_data in data['items']:
+            try:
+                menu_item = MenuItem.objects.get(id=item_data['menu_item_id'])
+                quantity = int(item_data['quantity'])
+                price = float(item_data['price'])
+                
+                OrderItem.objects.create(
+                    order=order,
+                    menu_item=menu_item,
+                    quantity=quantity,
+                    price=price
+                )
+                
+                total_amount += price * quantity
+                
+            except MenuItem.DoesNotExist:
+                order.delete()
+                return Response({'error': f'Menu item {item_data["menu_item_id"]} not found'}, status=404)
+            except (ValueError, KeyError):
+                order.delete()
+                return Response({'error': 'Invalid item data'}, status=400)
+        
+        # Update order total
+        order.total_amount = total_amount
+        order.save()
+        
+        # Return order details
+        serializer = OrderDetailSerializer(order)
+        return Response(serializer.data, status=201)
+        
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)
+
 
 # ========================================
 # VENDOR DASHBOARD API
