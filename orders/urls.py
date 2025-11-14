@@ -2,7 +2,8 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    # Order Create API
+    # Customer APIs
+    path('my-orders/', views.my_orders, name='my-orders'),
     path('create/', views.create_order, name='create-order'),
     
     # Dashboard APIs

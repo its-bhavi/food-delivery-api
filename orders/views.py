@@ -11,6 +11,24 @@ from .serializers import OrderDetailSerializer  # ✅ Fixed: Use OrderDetailSeri
 
 
 # ========================================
+# MY ORDERS API (Customer Orders)
+# ========================================
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def my_orders(request):
+    """Get all orders for logged-in customer"""
+    user = request.user
+    
+    # Get all orders for this customer
+    orders = Order.objects.filter(customer=user).select_related(
+        'restaurant'
+    ).prefetch_related('items__menu_item').order_by('-created_at')
+    
+    serializer = OrderDetailSerializer(orders, many=True)
+    return Response(serializer.data)
+
+
+# ========================================
 # CREATE ORDER API
 # ========================================
 @api_view(['POST'])
