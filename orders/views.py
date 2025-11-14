@@ -56,7 +56,12 @@ def create_order(request):
             except (ValueError, KeyError):
                 return Response({'error': 'Invalid item data'}, status=400)
         
-        # ✅ Create order with calculated total
+        # ✅ Calculate delivery charge and tax
+        delivery_charge = 50.00  # Fixed delivery charge
+        tax_amount = total_amount * 0.05  # 5% GST
+        grand_total = total_amount + delivery_charge + tax_amount
+        
+        # ✅ Create order with all calculated amounts
         order = Order.objects.create(
             customer=user,
             restaurant=restaurant,
@@ -66,7 +71,10 @@ def create_order(request):
             instructions=data.get('instructions', ''),
             order_number=data.get('order_number', f'ORD{Order.objects.count() + 1}'),
             payment_id=data.get('payment_id', ''),
-            total_amount=total_amount,  # ✅ Set total at creation
+            total_amount=total_amount,
+            delivery_charge=delivery_charge,
+            tax_amount=tax_amount,
+            grand_total=grand_total,
             status='pending'
         )
         
@@ -85,6 +93,7 @@ def create_order(request):
         
     except Exception as e:
         return Response({'error': str(e)}, status=500)
+
 
 
 
