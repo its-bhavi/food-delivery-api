@@ -1,4 +1,5 @@
 from django.db.models import Q
+from django.utils import timezone
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -200,16 +201,42 @@ def update_order_status(request, order_id):
             # Vendor can only update their own restaurant orders
             if order.restaurant.owner != user:
                 return Response({'error': 'Unauthorized'}, status=403)
+                
         elif user_type == 'delivery':
+            # Delivery partner accepting order (ready → picked)
+            if new_status == 'picked' and order.status == 'ready':
+                # Assign delivery partner to order
+                try:
+                    from delivery.models import DeliveryPartner
+                    delivery_partner = DeliveryPartner.objects.get(user=user)
+                    
+                    # Update order status
+                    order.status = 'picked'
+                    order.save()
+                    
+                    # Create or update tracking
+                    tracking, created = OrderTracking.objects.get_or_create(order=order)
+                    tracking.delivery_partner = delivery_partner
+                    tracking.picked_at = timezone.now()
+                    tracking.save()
+                    
+                    serializer = OrderDetailSerializer(order)
+                    return Response({
+                        'message': 'Delivery accepted successfully',
+                        'order': serializer.data
+                    })
+                    
+                except DeliveryPartner.DoesNotExist:
+                    return Response({'error': 'Delivery partner profile not found'}, status=404)
+            
             # Delivery partner can only update assigned orders
-            if order.status not in ['ready', 'picked']:
+            elif order.status not in ['ready', 'picked']:
                 return Response({'error': 'Cannot modify this order'}, status=403)
         else:
             return Response({'error': 'Access denied'}, status=403)
         
-        # Update status
+        # Update status (for other status changes)
         order.status = new_status
-        
         order.save()
         
         serializer = OrderDetailSerializer(order)
