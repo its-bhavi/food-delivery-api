@@ -6,6 +6,7 @@ urlpatterns = [
     path('my-orders/', views.my_orders, name='my-orders'),
     path('create/', views.create_order, name='create-order'),
     path('status/', views.order_status_by_number, name='order-status-by-number'),  # ?order=ORD123 or ?id=29
+    path('<int:order_id>/', views.get_order_detail, name='get-order-detail'),  # Direct order by ID
     
     # Dashboard APIs
     path('vendor-orders/', views.vendor_orders, name='vendor-orders'),

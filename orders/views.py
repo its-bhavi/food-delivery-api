@@ -281,3 +281,29 @@ def order_status_by_number(request):
         
     except Order.DoesNotExist:
         return Response({'error': 'Order not found'}, status=404)
+
+
+# ========================================
+# GET ORDER DETAIL BY ID (Path Parameter)
+# ========================================
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_order_detail(request, order_id):
+    """Get order details by order ID in URL path"""
+    try:
+        order = Order.objects.select_related(
+            'restaurant', 'customer'
+        ).prefetch_related('items__menu_item').get(id=order_id)
+        
+        # Check authorization - customer can view their order
+        user = request.user
+        if order.customer != user:
+            # Allow restaurant owner to view too
+            if not (hasattr(order.restaurant, 'owner') and order.restaurant.owner == user):
+                return Response({'error': 'Unauthorized'}, status=403)
+        
+        serializer = OrderDetailSerializer(order)
+        return Response(serializer.data)
+        
+    except Order.DoesNotExist:
+        return Response({'error': 'Order not found'}, status=404)
