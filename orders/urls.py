@@ -1,16 +1,18 @@
 from django.urls import path
-from .views import (
-    OrderCreateView,
-    OrderListView,
-    OrderDetailView,
-    OrderStatusUpdateView,
-    OrderCancelView
-)
+from . import views
 
 urlpatterns = [
-    path('create/', OrderCreateView.as_view(), name='order-create'),
-    path('my-orders/', OrderListView.as_view(), name='order-list'),
-    path('<int:pk>/', OrderDetailView.as_view(), name='order-detail'),
-    path('<int:order_id>/status/', OrderStatusUpdateView.as_view(), name='order-status'),
-    path('<int:order_id>/cancel/', OrderCancelView.as_view(), name='order-cancel'),
+    # ... existing URLs ...
+    
+    # Vendor Dashboard
+    path('vendor-orders/', views.vendor_orders, name='vendor-orders'),
+    
+    # Delivery Partner Dashboard
+    path('delivery-orders/', views.delivery_orders, name='delivery-orders'),
+    
+    # Update Order Status
+    path('<int:order_id>/update-status/', views.update_order_status, name='update-order-status'),
+    
+    # Real-time Status
+    path('<int:order_id>/realtime-status/', views.order_realtime_status, name='order-realtime-status'),
 ]
