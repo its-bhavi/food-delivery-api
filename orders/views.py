@@ -246,21 +246,28 @@ def order_realtime_status(request, order_id):
 
 
 # ========================================
-# GET ORDER BY ORDER NUMBER
+# GET ORDER BY ORDER NUMBER OR ID
 # ========================================
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def order_status_by_number(request):
-    """Get order status by order number (query param)"""
-    order_number = request.GET.get('order')
+    """Get order status by order number or order ID (query params)"""
+    order_number = request.GET.get('order')  # For order number like ORD123
+    order_id = request.GET.get('id')  # For order ID like 29
     
-    if not order_number:
-        return Response({'error': 'Order number is required'}, status=400)
+    if not order_number and not order_id:
+        return Response({'error': 'Order number or ID is required'}, status=400)
     
     try:
-        order = Order.objects.select_related(
-            'restaurant', 'customer'
-        ).prefetch_related('items__menu_item').get(order_number=order_number)
+        # Try to get by order_number first, then by ID
+        if order_number:
+            order = Order.objects.select_related(
+                'restaurant', 'customer'
+            ).prefetch_related('items__menu_item').get(order_number=order_number)
+        else:
+            order = Order.objects.select_related(
+                'restaurant', 'customer'
+            ).prefetch_related('items__menu_item').get(id=order_id)
         
         # Check authorization
         user = request.user
