@@ -8,6 +8,7 @@ from django.contrib.auth.models import User
 from vendors.models import Restaurant, MenuItem  # ✅ Fixed: vendors (not restaurants)
 from .models import Order, OrderItem
 from .serializers import OrderDetailSerializer  # ✅ Fixed: Use OrderDetailSerializer
+from delivery.models import OrderTracking
 
 
 # ========================================
@@ -304,6 +305,80 @@ def get_order_detail(request, order_id):
         
         serializer = OrderDetailSerializer(order)
         return Response(serializer.data)
+        
+    except Order.DoesNotExist:
+        return Response({'error': 'Order not found'}, status=404)
+
+
+# ========================================
+# GET ORDER TRACKING (Live Location)
+# ========================================
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_order_tracking(request, order_id):
+    """Get real-time tracking data for order with map coordinates"""
+    try:
+        order = Order.objects.select_related(
+            'restaurant', 'customer'
+        ).prefetch_related('items__menu_item').get(id=order_id)
+        
+        # Check authorization
+        user = request.user
+        if order.customer != user:
+            if not (hasattr(order.restaurant, 'owner') and order.restaurant.owner == user):
+                return Response({'error': 'Unauthorized'}, status=403)
+        
+        # Get tracking data
+        try:
+            tracking = OrderTracking.objects.select_related('delivery_partner').get(order=order)
+        except OrderTracking.DoesNotExist:
+            tracking = None
+        
+        # Prepare response data
+        response_data = {
+            'order': {
+                'id': order.id,
+                'order_number': order.order_number,
+                'status': order.status,
+                'delivery_address': order.delivery_address,
+                'restaurant': {
+                    'name': order.restaurant.name,
+                    'address': order.restaurant.address if hasattr(order.restaurant, 'address') else '',
+                    'phone': order.restaurant.phone if hasattr(order.restaurant, 'phone') else ''
+                },
+                'delivery_partner': None
+            },
+            'location': {
+                # Default restaurant location (you should store these in Restaurant model)
+                'restaurant_lat': 28.7041,  # Delhi coordinates as default
+                'restaurant_lng': 77.1025,
+                # Customer location (parse from delivery_address or store separately)
+                'customer_lat': 28.7041,  # You should geocode the delivery_address
+                'customer_lng': 77.1025,
+                'delivery_lat': None,
+                'delivery_lng': None
+            }
+        }
+        
+        # Add delivery partner info if available
+        if tracking and tracking.delivery_partner:
+            response_data['order']['delivery_partner'] = {
+                'first_name': tracking.delivery_partner.user.first_name,
+                'last_name': tracking.delivery_partner.user.last_name,
+                'phone': tracking.delivery_partner.phone,
+                'vehicle_type': tracking.delivery_partner.vehicle_type,
+                'vehicle_number': tracking.delivery_partner.vehicle_number
+            }
+            
+            # Update delivery partner current location
+            if tracking.current_latitude and tracking.current_longitude:
+                response_data['location']['delivery_lat'] = float(tracking.current_latitude)
+                response_data['location']['delivery_lng'] = float(tracking.current_longitude)
+            elif tracking.delivery_partner.current_latitude and tracking.delivery_partner.current_longitude:
+                response_data['location']['delivery_lat'] = float(tracking.delivery_partner.current_latitude)
+                response_data['location']['delivery_lng'] = float(tracking.delivery_partner.current_longitude)
+        
+        return Response(response_data)
         
     except Order.DoesNotExist:
         return Response({'error': 'Order not found'}, status=404)
