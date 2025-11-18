@@ -409,3 +409,71 @@ def get_order_tracking(request, order_id):
         
     except Order.DoesNotExist:
         return Response({'error': 'Order not found'}, status=404)
+
+
+# ========================================
+# UPDATE DELIVERY PARTNER LOCATION (LIVE GPS)
+# ========================================
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated])
+def update_delivery_location(request, order_id):
+    """Update delivery partner's current GPS location for live tracking"""
+    user = request.user
+    latitude = request.data.get('latitude')
+    longitude = request.data.get('longitude')
+    
+    if not latitude or not longitude:
+        return Response({'error': 'Latitude and longitude are required'}, status=400)
+    
+    try:
+        # Validate coordinates
+        lat = float(latitude)
+        lng = float(longitude)
+        
+        if not (-90 <= lat <= 90) or not (-180 <= lng <= 180):
+            return Response({'error': 'Invalid coordinates'}, status=400)
+            
+    except (ValueError, TypeError):
+        return Response({'error': 'Invalid coordinate format'}, status=400)
+    
+    try:
+        order = Order.objects.get(id=order_id)
+        
+        # Check if user is delivery partner
+        user_type = user.profile.user_type if hasattr(user, 'profile') else None
+        if user_type != 'delivery':
+            return Response({'error': 'Only delivery partners can update location'}, status=403)
+        
+        # Get delivery partner profile
+        from delivery.models import DeliveryPartner
+        try:
+            delivery_partner = DeliveryPartner.objects.get(user=user)
+        except DeliveryPartner.DoesNotExist:
+            return Response({'error': 'Delivery partner profile not found'}, status=404)
+        
+        # Get or create order tracking
+        tracking, created = OrderTracking.objects.get_or_create(order=order)
+        
+        # Verify this delivery partner is assigned to this order
+        if tracking.delivery_partner != delivery_partner:
+            return Response({'error': 'You are not assigned to this order'}, status=403)
+        
+        # Update location in OrderTracking
+        tracking.current_latitude = lat
+        tracking.current_longitude = lng
+        tracking.save()
+        
+        # Also update in DeliveryPartner model (for general tracking)
+        delivery_partner.current_latitude = lat
+        delivery_partner.current_longitude = lng
+        delivery_partner.save()
+        
+        return Response({
+            'message': 'Location updated successfully',
+            'latitude': lat,
+            'longitude': lng,
+            'order_id': order_id
+        })
+        
+    except Order.DoesNotExist:
+        return Response({'error': 'Order not found'}, status=404)

@@ -9,6 +9,7 @@ urlpatterns = [
     
     # Order Status Update (must be BEFORE generic <int:order_id>/)
     path('<int:order_id>/update-status/', views.update_order_status, name='update-order-status'),
+    path('<int:order_id>/update-location/', views.update_delivery_location, name='update-delivery-location'),  # Live GPS
     path('<int:order_id>/tracking/', views.get_order_tracking, name='get-order-tracking'),  # Live tracking
     path('<int:order_id>/realtime-status/', views.order_realtime_status, name='order-realtime-status'),
     
