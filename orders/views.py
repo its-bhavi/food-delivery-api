@@ -214,16 +214,31 @@ def update_order_status(request, order_id):
                     order.status = 'picked'
                     order.save()
                     
-                    # Create or update tracking
+                    # Create or update tracking with initial location
                     tracking, created = OrderTracking.objects.get_or_create(order=order)
                     tracking.delivery_partner = delivery_partner
                     tracking.picked_at = timezone.now()
+                    
+                    # Initialize with delivery partner's current location if available
+                    if delivery_partner.current_latitude and delivery_partner.current_longitude:
+                        tracking.current_latitude = delivery_partner.current_latitude
+                        tracking.current_longitude = delivery_partner.current_longitude
+                    
                     tracking.save()
+                    
+                    # Update delivery partner status to busy
+                    delivery_partner.status = 'busy'
+                    delivery_partner.save()
                     
                     serializer = OrderDetailSerializer(order)
                     return Response({
                         'message': 'Delivery accepted successfully',
-                        'order': serializer.data
+                        'order': serializer.data,
+                        'tracking': {
+                            'delivery_partner_id': delivery_partner.id,
+                            'order_id': order.id,
+                            'tracking_initialized': True
+                        }
                     })
                     
                 except DeliveryPartner.DoesNotExist:
@@ -389,21 +404,31 @@ def get_order_tracking(request, order_id):
         
         # Add delivery partner info if available
         if tracking and tracking.delivery_partner:
+            dp = tracking.delivery_partner
             response_data['order']['delivery_partner'] = {
-                'first_name': tracking.delivery_partner.user.first_name,
-                'last_name': tracking.delivery_partner.user.last_name,
-                'phone': tracking.delivery_partner.phone,
-                'vehicle_type': tracking.delivery_partner.vehicle_type,
-                'vehicle_number': tracking.delivery_partner.vehicle_number
+                'first_name': dp.user.first_name,
+                'last_name': dp.user.last_name,
+                'phone': dp.phone,
+                'vehicle_type': dp.vehicle_type,
+                'vehicle_number': dp.vehicle_number
             }
             
-            # Update delivery partner current location
+            # Update delivery partner current location (priority: tracking > partner profile)
             if tracking.current_latitude and tracking.current_longitude:
                 response_data['location']['delivery_lat'] = float(tracking.current_latitude)
                 response_data['location']['delivery_lng'] = float(tracking.current_longitude)
-            elif tracking.delivery_partner.current_latitude and tracking.delivery_partner.current_longitude:
-                response_data['location']['delivery_lat'] = float(tracking.delivery_partner.current_latitude)
-                response_data['location']['delivery_lng'] = float(tracking.delivery_partner.current_longitude)
+            elif dp.current_latitude and dp.current_longitude:
+                response_data['location']['delivery_lat'] = float(dp.current_latitude)
+                response_data['location']['delivery_lng'] = float(dp.current_longitude)
+        
+        # Add metadata for debugging
+        response_data['order']['grand_total'] = str(order.grand_total) if order.grand_total else '0.00'
+        response_data['order']['payment_method'] = order.payment_method
+        response_data['metadata'] = {
+            'tracking_exists': tracking is not None,
+            'delivery_assigned': tracking.delivery_partner is not None if tracking else False,
+            'location_available': response_data['location']['delivery_lat'] is not None
+        }
         
         return Response(response_data)
         
@@ -454,6 +479,11 @@ def update_delivery_location(request, order_id):
         # Get or create order tracking
         tracking, created = OrderTracking.objects.get_or_create(order=order)
         
+        # Assign delivery partner if not already assigned
+        if not tracking.delivery_partner:
+            tracking.delivery_partner = delivery_partner
+            tracking.save()
+        
         # Verify this delivery partner is assigned to this order
         if tracking.delivery_partner != delivery_partner:
             return Response({'error': 'You are not assigned to this order'}, status=403)
@@ -472,7 +502,9 @@ def update_delivery_location(request, order_id):
             'message': 'Location updated successfully',
             'latitude': lat,
             'longitude': lng,
-            'order_id': order_id
+            'order_id': order_id,
+            'order_status': order.status,
+            'order_number': order.order_number
         })
         
     except Order.DoesNotExist:
