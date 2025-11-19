@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delivery Partner Profile Setup</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
+        .container { max-width: 700px; margin: 0 auto; background: white; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); overflow: hidden; }
+        .header { background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 30px; text-align: center; color: white; }
+        .header h1 { font-size: 32px; margin-bottom: 10px; }
+        .header p { opacity: 0.9; font-size: 16px; }
+        .content { padding: 40px; }
+        .profile-status { background: #f0f0f5; padding: 20px; border-radius: 12px; margin-bottom: 30px; display: none; }
+        .profile-status.active { display: block; }
+        .profile-status.complete { background: #d4edda; border-left: 4px solid #28a745; }
+        .profile-status.incomplete { background: #fff3cd; border-left: 4px solid #ffc107; }
+        .form-group { margin-bottom: 25px; }
+        .form-group label { display: block; font-weight: 600; margin-bottom: 8px; color: #282c3f; font-size: 14px; }
+        .form-group label .required { color: #e23744; }
+        .form-group input, .form-group select { width: 100%; padding: 12px 15px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 15px; transition: all 0.3s; }
+        .form-group input:focus, .form-group select:focus { outline: none; border-color: #10b981; box-shadow: 0 0 0 3px rgba(16,185,129,0.1); }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .btn { padding: 14px 30px; border: none; border-radius: 10px; font-weight: 600; font-size: 16px; cursor: pointer; transition: all 0.3s; }
+        .btn-primary { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; width: 100%; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(16,185,129,0.3); }
+        .alert { padding: 15px 20px; border-radius: 10px; margin-bottom: 20px; font-size: 14px; }
+        .alert-success { background: #d4edda; color: #155724; border-left: 4px solid #28a745; }
+        .alert-error { background: #f8d7da; color: #721c24; border-left: 4px solid #dc3545; }
+        .loading { display: none; text-align: center; padding: 40px; }
+        .loading.active { display: block; }
+        .spinner { width: 50px; height: 50px; border: 4px solid #f3f3f3; border-top-color: #10b981; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 20px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .info-box { background: #e7f3ff; padding: 15px 20px; border-radius: 10px; margin-bottom: 25px; border-left: 4px solid #0066cc; }
+        .info-box strong { color: #0066cc; }
+        .vehicle-icon { font-size: 24px; margin-right: 8px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🛵 Delivery Partner Profile</h1>
+            <p>Complete your profile to start delivering orders</p>
+        </div>
+        
+        <div class="content">
+            <div id="loadingScreen" class="loading">
+                <div class="spinner"></div>
+                <p>Loading your profile...</p>
+            </div>
+
+            <div id="profileStatus" class="profile-status"></div>
+            <div id="alertBox"></div>
+
+            <form id="profileForm" style="display:none;">
+                <div class="info-box">
+                    <strong>📱 Account Info:</strong><br>
+                    Name: <span id="userName">-</span><br>
+                    Email: <span id="userEmail">-</span>
+                </div>
+
+                <div class="form-group">
+                    <label>Phone Number <span class="required">*</span></label>
+                    <input type="tel" id="phone" required placeholder="+91 9876543210" maxlength="15">
+                </div>
+
+                <div class="form-group">
+                    <label>Vehicle Type <span class="required">*</span></label>
+                    <select id="vehicleType" required>
+                        <option value="">Select Vehicle</option>
+                        <option value="Bike">🏍️ Bike/Motorcycle</option>
+                        <option value="Scooter">🛵 Scooter</option>
+                        <option value="Bicycle">🚲 Bicycle</option>
+                        <option value="Car">🚗 Car</option>
+                    </select>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Vehicle Number <span class="required">*</span></label>
+                        <input type="text" id="vehicleNumber" required placeholder="UP14AB1234" style="text-transform:uppercase;">
+                    </div>
+                    <div class="form-group">
+                        <label>License Number</label>
+                        <input type="text" id="licenseNumber" placeholder="DL1234567890" style="text-transform:uppercase;">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary" id="submitBtn">
+                    <span id="btnText">Save Partner Profile</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'https://food-delivery-api-fr4f.onrender.com/api';
+        let isUpdateMode = false;
+
+        function getToken() {
+            return localStorage.getItem('access_token') || localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+        }
+
+        // Load user info
+        async function loadUserInfo() {
+            const token = getToken();
+            try {
+                const response = await fetch(`${API_BASE}/users/profile/`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('userName').textContent = `${data.first_name} ${data.last_name}`;
+                    document.getElementById('userEmail').textContent = data.email;
+                }
+            } catch (error) {
+                console.error('Error loading user info:', error);
+            }
+        }
+
+        // Load existing profile
+        async function loadProfile() {
+            const token = getToken();
+            if (!token) {
+                showAlert('Please login first', 'error');
+                setTimeout(() => window.location.href = '/login/', 2000);
+                return;
+            }
+
+            document.getElementById('loadingScreen').classList.add('active');
+
+            try {
+                const response = await fetch(`${API_BASE}/delivery/profile/`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.status === 404) {
+                    // Profile doesn't exist
+                    document.getElementById('profileStatus').innerHTML = `
+                        <strong>⚠️ Profile Incomplete</strong><br>
+                        Please complete your delivery partner details to start earning.
+                    `;
+                    document.getElementById('profileStatus').classList.add('active', 'incomplete');
+                    isUpdateMode = false;
+                    document.getElementById('btnText').textContent = 'Create Partner Profile';
+                } else if (response.ok) {
+                    // Profile exists
+                    const data = await response.json();
+                    populateForm(data);
+                    isUpdateMode = true;
+                    document.getElementById('btnText').textContent = 'Update Partner Profile';
+                    document.getElementById('profileStatus').innerHTML = `
+                        <strong>✅ Profile Active</strong><br>
+                        Update your delivery partner details below.<br>
+                        Status: <strong>${data.status}</strong> | Deliveries: <strong>${data.total_deliveries}</strong>
+                    `;
+                    document.getElementById('profileStatus').classList.add('active', 'complete');
+                } else {
+                    throw new Error('Failed to load profile');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('Error loading profile: ' + error.message, 'error');
+            } finally {
+                document.getElementById('loadingScreen').classList.remove('active');
+                document.getElementById('profileForm').style.display = 'block';
+                await loadUserInfo();
+            }
+        }
+
+        function populateForm(data) {
+            document.getElementById('phone').value = data.phone || '';
+            document.getElementById('vehicleType').value = data.vehicle_type || '';
+            document.getElementById('vehicleNumber').value = data.vehicle_number || '';
+            document.getElementById('licenseNumber').value = data.license_number || '';
+        }
+
+        // Submit form
+        document.getElementById('profileForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const token = getToken();
+            const formData = {
+                phone: document.getElementById('phone').value,
+                vehicle_type: document.getElementById('vehicleType').value,
+                vehicle_number: document.getElementById('vehicleNumber').value.toUpperCase(),
+                license_number: document.getElementById('licenseNumber').value.toUpperCase() || 'PENDING'
+            };
+
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span>⏳ Saving...</span>';
+
+            try {
+                const method = isUpdateMode ? 'PUT' : 'POST';
+                const response = await fetch(`${API_BASE}/delivery/profile/`, {
+                    method: method,
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showAlert(data.message || 'Profile saved successfully! 🎉', 'success');
+                    setTimeout(() => {
+                        window.location.href = '/delivery-partner-dashboard/';
+                    }, 2000);
+                } else {
+                    throw new Error(data.error || 'Failed to save profile');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('Error: ' + error.message, 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = `<span id="btnText">${isUpdateMode ? 'Update' : 'Create'} Partner Profile</span>`;
+            }
+        });
+
+        function showAlert(message, type) {
+            const alertBox = document.getElementById('alertBox');
+            alertBox.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+            setTimeout(() => alertBox.innerHTML = '', 5000);
+        }
+
+        // Auto-uppercase
+        document.getElementById('vehicleNumber').addEventListener('input', (e) => {
+            e.target.value = e.target.value.toUpperCase();
+        });
+        document.getElementById('licenseNumber').addEventListener('input', (e) => {
+            e.target.value = e.target.value.toUpperCase();
+        });
+
+        // Initialize
+        window.addEventListener('load', loadProfile);
+    </script>
+</body>
+</html>

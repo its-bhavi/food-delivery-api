@@ -1,6 +1,8 @@
-from rest_framework import generics
+from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
 from .models import DeliveryPartner, OrderTracking
 from .serializers import DeliveryPartnerSerializer, OrderTrackingSerializer
 
@@ -49,4 +51,84 @@ class UpdateDeliveryLocationView(APIView):
 # Available Delivery Partners
 class AvailablePartnersView(generics.ListAPIView):
     queryset = DeliveryPartner.objects.filter(status='available')
+    serializer_class = DeliveryPartnerSerializer
+
+
+# ========================================
+# DELIVERY PARTNER PROFILE MANAGEMENT API
+# ========================================
+
+@api_view(['GET', 'POST', 'PUT'])
+@permission_classes([IsAuthenticated])
+def delivery_partner_profile_management(request):
+    """Manage delivery partner profile (create/update/view)"""
+    user = request.user
+    
+    # Check if user is delivery partner
+    if not hasattr(user, 'profile') or user.profile.user_type != 'delivery':
+        return Response({'error': 'Access denied. Not a delivery partner.'}, status=403)
+    
+    # GET: Get delivery partner profile
+    if request.method == 'GET':
+        try:
+            partner = DeliveryPartner.objects.get(user=user)
+            serializer = DeliveryPartnerSerializer(partner)
+            return Response(serializer.data)
+        except DeliveryPartner.DoesNotExist:
+            return Response({
+                'exists': False,
+                'message': 'Please complete your delivery partner profile'
+            }, status=404)
+    
+    # POST: Create delivery partner profile
+    elif request.method == 'POST':
+        # Check if profile already exists
+        if DeliveryPartner.objects.filter(user=user).exists():
+            return Response({'error': 'Profile already exists. Use PUT to update.'}, status=400)
+        
+        data = request.data
+        
+        # Create delivery partner profile
+        partner = DeliveryPartner.objects.create(
+            user=user,
+            phone=data.get('phone'),
+            vehicle_type=data.get('vehicle_type', 'Bike'),
+            vehicle_number=data.get('vehicle_number'),
+            license_number=data.get('license_number', 'PENDING'),
+            status='offline'
+        )
+        
+        serializer = DeliveryPartnerSerializer(partner)
+        return Response({
+            'message': 'Delivery partner profile created successfully',
+            'partner': serializer.data
+        }, status=201)
+    
+    # PUT: Update delivery partner profile
+    elif request.method == 'PUT':
+        try:
+            partner = DeliveryPartner.objects.get(user=user)
+        except DeliveryPartner.DoesNotExist:
+            return Response({'error': 'Profile not found. Use POST to create.'}, status=404)
+        
+        # Update fields
+        data = request.data
+        if 'phone' in data:
+            partner.phone = data['phone']
+        if 'vehicle_type' in data:
+            partner.vehicle_type = data['vehicle_type']
+        if 'vehicle_number' in data:
+            partner.vehicle_number = data['vehicle_number']
+        if 'license_number' in data:
+            partner.license_number = data['license_number']
+        if 'status' in data:
+            partner.status = data['status']
+        
+        partner.save()
+        
+        serializer = DeliveryPartnerSerializer(partner)
+        return Response({
+            'message': 'Profile updated successfully',
+            'partner': serializer.data
+        })
     serializer_class = DeliveryPartnerSerializer

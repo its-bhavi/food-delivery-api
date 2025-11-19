@@ -3,7 +3,8 @@ from .views import (
     RestaurantListView,
     RestaurantDetailView,
     RestaurantMenuView,
-    RestaurantSearchView
+    RestaurantSearchView,
+    vendor_profile_management
 )
 
 urlpatterns = [
@@ -11,4 +12,7 @@ urlpatterns = [
     path('restaurants/<int:pk>/', RestaurantDetailView.as_view(), name='restaurant-detail'),
     path('restaurants/<int:restaurant_id>/menu/', RestaurantMenuView.as_view(), name='restaurant-menu'),
     path('restaurants/search/', RestaurantSearchView.as_view(), name='restaurant-search'),
+    
+    # Vendor Profile Management
+    path('profile/', vendor_profile_management, name='vendor-profile'),
 ]
