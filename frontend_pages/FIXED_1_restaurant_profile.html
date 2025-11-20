@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restaurant Profile Setup</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; background: white; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); overflow: hidden; }
+        .header { background: linear-gradient(135deg, #fc8019 0%, #e23744 100%); padding: 30px; text-align: center; color: white; }
+        .header h1 { font-size: 32px; margin-bottom: 10px; }
+        .header p { opacity: 0.9; font-size: 16px; }
+        .content { padding: 40px; }
+        .alert { padding: 15px 20px; border-radius: 10px; margin-bottom: 20px; font-size: 14px; display: none; }
+        .alert.show { display: block; }
+        .alert-success { background: #d4edda; color: #155724; border-left: 4px solid #28a745; }
+        .alert-error { background: #f8d7da; color: #721c24; border-left: 4px solid #dc3545; }
+        .alert-info { background: #d1ecf1; color: #0c5460; border-left: 4px solid #17a2b8; }
+        .profile-status { background: #f0f0f5; padding: 20px; border-radius: 12px; margin-bottom: 30px; }
+        .profile-status.exists { background: #d4edda; border-left: 4px solid #28a745; }
+        .form-group { margin-bottom: 25px; }
+        .form-group label { display: block; font-weight: 600; margin-bottom: 8px; color: #282c3f; font-size: 14px; }
+        .form-group label .required { color: #e23744; }
+        .form-group input, .form-group textarea { width: 100%; padding: 12px 15px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 15px; transition: all 0.3s; font-family: inherit; }
+        .form-group input:focus, .form-group textarea:focus { outline: none; border-color: #fc8019; box-shadow: 0 0 0 3px rgba(252,128,25,0.1); }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .map-container { height: 350px; border-radius: 12px; overflow: hidden; margin-top: 10px; border: 2px solid #e0e0e0; background: #f0f0f0; display: flex; align-items: center; justify-content: center; color: #666; }
+        .coords-display { background: #f8f9fa; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 13px; margin-top: 10px; color: #333; }
+        .image-preview { width: 150px; height: 150px; border-radius: 12px; object-fit: cover; margin-top: 10px; border: 2px solid #e0e0e0; display: none; }
+        .btn { padding: 14px 30px; border: none; border-radius: 10px; font-weight: 600; font-size: 16px; cursor: pointer; transition: all 0.3s; }
+        .btn-primary { background: linear-gradient(135deg, #fc8019 0%, #e23744 100%); color: white; width: 100%; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(252,128,25,0.3); }
+        .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .loading { display: none; text-align: center; padding: 20px; }
+        .loading.active { display: block; }
+        .spinner { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top-color: #fc8019; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🍽️ Restaurant Profile Setup</h1>
+            <p>Complete your profile to start receiving orders</p>
+        </div>
+        
+        <div class="content">
+            <div id="alertContainer"></div>
+            
+            <div id="profileStatus" class="profile-status" style="display:none;">
+                <h3 id="statusTitle">✅ Profile Active</h3>
+                <p id="statusMessage">Update your restaurant details below.</p>
+            </div>
+
+            <form id="profileForm">
+                <div class="form-group">
+                    <label>Restaurant Name <span class="required">*</span></label>
+                    <input type="text" id="restaurantName" required placeholder="Enter restaurant name">
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Phone Number <span class="required">*</span></label>
+                        <input type="tel" id="phone" required placeholder="1234567890" pattern="[0-9]{10}">
+                    </div>
+                    <div class="form-group">
+                        <label>Email <span class="required">*</span></label>
+                        <input type="email" id="email" required placeholder="restaurant@example.com">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Full Address <span class="required">*</span></label>
+                    <textarea id="address" rows="3" required placeholder="Enter complete restaurant address"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Restaurant Location <span class="required">*</span></label>
+                    <input type="text" id="locationSearch" placeholder="Search location or enter manually">
+                    <div id="map" class="map-container">
+                        <div>📍 Map will load here after Google Maps API loads</div>
+                    </div>
+                    <div class="coords-display">
+                        <strong>Coordinates:</strong> 
+                        <span id="latDisplay">Lat: 28.7041</span>, 
+                        <span id="lngDisplay">Lng: 77.1025</span>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Opening Time</label>
+                        <input type="time" id="openingTime" value="09:00">
+                    </div>
+                    <div class="form-group">
+                        <label>Closing Time</label>
+                        <input type="time" id="closingTime" value="22:00">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Restaurant Image</label>
+                    <input type="file" id="imageFile" accept="image/*" onchange="previewImage(event)">
+                    <img id="imagePreview" class="image-preview">
+                </div>
+
+                <div class="loading" id="loadingIndicator">
+                    <div class="spinner"></div>
+                    <p>Saving profile...</p>
+                </div>
+
+                <button type="submit" class="btn btn-primary" id="submitBtn">
+                    💾 Save Restaurant Profile
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'https://food-delivery-api-fr4f.onrender.com/api';
+        let map, marker;
+        let currentLat = 28.7041;
+        let currentLng = 77.1025;
+        let existingProfile = null;
+
+        function getToken() {
+            return localStorage.getItem('access_token') || 
+                   localStorage.getItem('authToken') || 
+                   sessionStorage.getItem('authToken');
+        }
+
+        function showAlert(message, type) {
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type} show`;
+            alert.textContent = message;
+            
+            const container = document.getElementById('alertContainer');
+            container.innerHTML = '';
+            container.appendChild(alert);
+            
+            setTimeout(() => alert.remove(), 5000);
+        }
+
+        function previewImage(event) {
+            const preview = document.getElementById('imagePreview');
+            const file = event.target.files[0];
+            
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function updateCoordinates(lat, lng) {
+            currentLat = lat;
+            currentLng = lng;
+            document.getElementById('latDisplay').textContent = `Lat: ${lat.toFixed(6)}`;
+            document.getElementById('lngDisplay').textContent = `Lng: ${lng.toFixed(6)}`;
+        }
+
+        function initMap() {
+            const defaultLocation = { lat: currentLat, lng: currentLng };
+            
+            map = new google.maps.Map(document.getElementById('map'), {
+                center: defaultLocation,
+                zoom: 15,
+                mapTypeControl: true
+            });
+
+            marker = new google.maps.Marker({
+                position: defaultLocation,
+                map: map,
+                draggable: true,
+                title: 'Restaurant Location'
+            });
+
+            marker.addListener('dragend', () => {
+                const pos = marker.getPosition();
+                updateCoordinates(pos.lat(), pos.lng());
+            });
+
+            map.addListener('click', (e) => {
+                marker.setPosition(e.latLng);
+                updateCoordinates(e.latLng.lat(), e.latLng.lng());
+            });
+
+            // Autocomplete
+            const searchInput = document.getElementById('locationSearch');
+            const autocomplete = new google.maps.places.Autocomplete(searchInput);
+            autocomplete.bindTo('bounds', map);
+
+            autocomplete.addListener('place_changed', () => {
+                const place = autocomplete.getPlace();
+                if (place.geometry) {
+                    const location = place.geometry.location;
+                    map.setCenter(location);
+                    marker.setPosition(location);
+                    updateCoordinates(location.lat(), location.lng());
+                    map.setZoom(17);
+                }
+            });
+        }
+
+        async function loadProfile() {
+            const token = getToken();
+            if (!token) {
+                showAlert('Please login first', 'error');
+                setTimeout(() => window.location.href = '/login/', 2000);
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/vendors/profile/`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.ok) {
+                    existingProfile = await response.json();
+                    
+                    document.getElementById('profileStatus').style.display = 'block';
+                    document.getElementById('profileStatus').classList.add('exists');
+                    document.getElementById('statusTitle').textContent = '✅ Profile Exists';
+                    document.getElementById('statusMessage').textContent = 'You can update your restaurant details below.';
+                    
+                    // Fill form
+                    document.getElementById('restaurantName').value = existingProfile.name || '';
+                    document.getElementById('phone').value = existingProfile.phone || '';
+                    document.getElementById('email').value = existingProfile.email || '';
+                    document.getElementById('address').value = existingProfile.address || '';
+                    document.getElementById('openingTime').value = existingProfile.opening_time || '09:00';
+                    document.getElementById('closingTime').value = existingProfile.closing_time || '22:00';
+                    
+                    if (existingProfile.latitude && existingProfile.longitude) {
+                        currentLat = parseFloat(existingProfile.latitude);
+                        currentLng = parseFloat(existingProfile.longitude);
+                        updateCoordinates(currentLat, currentLng);
+                        
+                        if (map) {
+                            const newPos = { lat: currentLat, lng: currentLng };
+                            map.setCenter(newPos);
+                            marker.setPosition(newPos);
+                        }
+                    }
+                    
+                    if (existingProfile.image) {
+                        const preview = document.getElementById('imagePreview');
+                        preview.src = existingProfile.image;
+                        preview.style.display = 'block';
+                    }
+                    
+                    document.getElementById('submitBtn').textContent = '✏️ Update Restaurant Profile';
+                } else if (response.status === 404) {
+                    document.getElementById('profileStatus').style.display = 'block';
+                    document.getElementById('statusTitle').textContent = '📝 New Registration';
+                    document.getElementById('statusMessage').textContent = 'Create your restaurant profile to start receiving orders.';
+                    document.getElementById('submitBtn').textContent = '➕ Create Restaurant Profile';
+                } else {
+                    showAlert('Error loading profile', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('Failed to load profile: ' + error.message, 'error');
+            }
+        }
+
+        document.getElementById('profileForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const token = getToken();
+            if (!token) {
+                showAlert('Session expired. Please login again.', 'error');
+                return;
+            }
+
+            const submitBtn = document.getElementById('submitBtn');
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            
+            submitBtn.disabled = true;
+            loadingIndicator.classList.add('active');
+
+            const formData = new FormData();
+            formData.append('name', document.getElementById('restaurantName').value);
+            formData.append('phone', document.getElementById('phone').value);
+            formData.append('email', document.getElementById('email').value);
+            formData.append('address', document.getElementById('address').value);
+            formData.append('latitude', currentLat);
+            formData.append('longitude', currentLng);
+            formData.append('opening_time', document.getElementById('openingTime').value);
+            formData.append('closing_time', document.getElementById('closingTime').value);
+            
+            const imageFile = document.getElementById('imageFile').files[0];
+            if (imageFile) {
+                formData.append('image', imageFile);
+            }
+
+            try {
+                const method = existingProfile ? 'PUT' : 'POST';
+                const response = await fetch(`${API_BASE}/vendors/profile/`, {
+                    method: method,
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    showAlert(existingProfile ? '✅ Profile updated successfully!' : '✅ Restaurant registered successfully!', 'success');
+                    
+                    setTimeout(() => {
+                        window.location.href = '/restaurant-dashboard/';
+                    }, 2000);
+                } else {
+                    const error = await response.json();
+                    showAlert('Error: ' + (error.detail || JSON.stringify(error)), 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('Failed to save profile: ' + error.message, 'error');
+            } finally {
+                submitBtn.disabled = false;
+                loadingIndicator.classList.remove('active');
+            }
+        });
+
+        // Load Google Maps API dynamically
+        window.initializeApp = function() {
+            loadProfile();
+            initMap();
+        };
+
+        const script = document.createElement('script');
+        script.src = 'https://maps.googleapis.com/maps/api/js?key=AIzaSyD1v0RxpSZc4HvO5GO4dTyGfUqi89oiHI0&libraries=places&callback=initializeApp';
+        script.async = true;
+        script.defer = true;
+        document.head.appendChild(script);
+    </script>
+</body>
+</html>
