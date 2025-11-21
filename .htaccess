@@ -1,0 +1,27 @@
+# BEGIN WordPress CSP Override
+<IfModule mod_headers.c>
+    # Remove ALL CSP headers
+    Header unset Content-Security-Policy
+    Header unset X-Content-Security-Policy
+    Header unset X-WebKit-CSP
+    Header unset Content-Security-Policy-Report-Only
+    
+    # Set permissive CSP
+    Header always set Content-Security-Policy "default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; script-src * 'unsafe-inline' 'unsafe-eval'; style-src * 'unsafe-inline'; img-src * data: blob:; font-src * data:; connect-src *; frame-src *;"
+</IfModule>
+# END WordPress CSP Override
+
+# BEGIN WordPress
+# The directives (lines) between "BEGIN WordPress" and "END WordPress" are
+# dynamically generated, and should only be modified via WordPress filters.
+# Any changes to the directives between these markers will be overwritten.
+<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+RewriteBase /
+RewriteRule ^index\.php$ - [L]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule . /index.php [L]
+</IfModule>
+# END WordPress
