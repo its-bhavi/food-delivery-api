@@ -224,29 +224,23 @@ define('GOOGLE_MAPS_API_KEY', 'AIzaSyD1v0RxpSZc4HvO5GO4dTyGfUqi89oiHI0');
    CSP HEADERS - NO RESTRICTIONS FOR RAZORPAY AND MAPS
    ============================================================================ */
 
-function add_permissive_csp_headers() {
+// COMPLETELY DISABLE CSP - NO RESTRICTIONS AT ALL
+function remove_all_csp_headers() {
     if (is_admin()) {
         return;
     }
     
-    // Remove any existing CSP headers first
+    // Remove ALL CSP headers
     header_remove('Content-Security-Policy');
+    header_remove('Content-Security-Policy-Report-Only');
     header_remove('X-Content-Security-Policy');
     header_remove('X-WebKit-CSP');
     
-    // Add very permissive CSP that allows everything needed
-    $csp = "default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; ";
-    $csp .= "script-src * 'unsafe-inline' 'unsafe-eval'; ";
-    $csp .= "style-src * 'unsafe-inline'; ";
-    $csp .= "img-src * data: blob: 'unsafe-inline'; ";
-    $csp .= "font-src * data:; ";
-    $csp .= "connect-src *; ";
-    $csp .= "frame-src *; ";
-    $csp .= "media-src *;";
-    
-    header("Content-Security-Policy: " . $csp);
+    // DO NOT add any CSP - let everything load freely
 }
-add_action('send_headers', 'add_permissive_csp_headers', 1);
+add_action('send_headers', 'remove_all_csp_headers', 999);
+add_action('wp_headers', 'remove_all_csp_headers', 999);
+add_action('template_redirect', 'remove_all_csp_headers', 999);
 
 /* ============================================================================
    DISABLE CONFLICTING SECURITY PLUGINS
