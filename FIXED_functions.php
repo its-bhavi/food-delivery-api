@@ -397,7 +397,9 @@ add_action('wp_head', 'add_razorpay_csp_meta', 1);
 // Load Razorpay SDK
 function load_razorpay_sdk() {
     // Load Razorpay checkout script on payment/checkout pages
-    if (is_page(array('checkout', 'payment', 'my-account', 'cart')) || is_checkout()) {
+    $is_checkout_page = (function_exists('is_checkout') && is_checkout()) || is_page(array('checkout', 'payment', 'my-account', 'cart'));
+    
+    if ($is_checkout_page) {
         wp_enqueue_script('razorpay-checkout', 'https://checkout.razorpay.com/v1/checkout.js', array(), null, true);
     }
 }
