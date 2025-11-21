@@ -394,6 +394,15 @@ add_action('wp_head', 'add_razorpay_csp_meta', 1);
    UTILITY FUNCTIONS FOR FRONTEND
    ============================================================================ */
 
+// Load Razorpay SDK
+function load_razorpay_sdk() {
+    // Load Razorpay checkout script on payment/checkout pages
+    if (is_page(array('checkout', 'payment', 'my-account', 'cart')) || is_checkout()) {
+        wp_enqueue_script('razorpay-checkout', 'https://checkout.razorpay.com/v1/checkout.js', array(), null, true);
+    }
+}
+add_action('wp_enqueue_scripts', 'load_razorpay_sdk');
+
 // Add inline script to expose API base URL to JavaScript
 function expose_api_config_to_js() {
     ?>
@@ -402,9 +411,16 @@ function expose_api_config_to_js() {
             apiBaseUrl: '<?php echo esc_js(API_BASE_URL); ?>',
             googleMapsKey: 'AIzaSyD1v0RxpSZc4HvO5GO4dTyGfUqi89oiHI0',
             razorpayKeyId: 'rzp_test_Rf8SX4fcBCXLU3', // Test mode key
-            razorpayKeySecret: 'oAqctnCPvGY1S4u2Uxqo6FR7', // DO NOT expose in production!
             siteUrl: '<?php echo esc_js(home_url()); ?>'
         };
+        
+        // Load Razorpay dynamically if not loaded
+        if (typeof Razorpay === 'undefined' && !document.querySelector('script[src*="razorpay"]')) {
+            const rzpScript = document.createElement('script');
+            rzpScript.src = 'https://checkout.razorpay.com/v1/checkout.js';
+            rzpScript.async = true;
+            document.head.appendChild(rzpScript);
+        }
     </script>
     <?php
 }
