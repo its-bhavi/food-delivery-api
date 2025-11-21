@@ -268,75 +268,33 @@ function make_api_request($endpoint, $method = 'GET', $data = null, $token = nul
 }
 
 /* ============================================================================
-   COMPLETE CSP (Content Security Policy) HEADERS
+   COMPLETE CSP (Content Security Policy) HEADERS - SIMPLE VERSION
    ============================================================================ */
 
-// Remove all default CSP headers first to avoid conflicts
-function remove_default_csp_headers() {
-    header_remove('Content-Security-Policy');
-    header_remove('X-Content-Security-Policy');
-    header_remove('X-WebKit-CSP');
-}
-add_action('send_headers', 'remove_default_csp_headers', 1);
-
-// Add comprehensive CSP headers for Food Delivery App
-function add_food_delivery_csp_headers() {
-    // Don't add CSP headers in admin area
+// Complete CSP headers for all resources - SIMPLE AND WORKING
+function add_full_csp_headers() {
+    // Don't add in admin
     if (is_admin()) {
         return;
     }
     
-    $csp_directives = array(
-        // Default fallback - allow self
-        "default-src 'self'",
-        
-        // Scripts - Allow inline scripts (for dynamic JS), Google Maps API
-        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://maps.googleapis.com https://*.googleapis.com https://cdn.jsdelivr.net",
-        
-        // Styles - Allow inline styles, Google Fonts
-        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-        
-        // Fonts - Allow Google Fonts, data URIs
-        "font-src 'self' data: https://fonts.gstatic.com https://fonts.googleapis.com",
-        
-        // Images - Allow all HTTPS images, data URIs, your backend
-        "img-src 'self' data: https: http: blob: https://food-delivery-api-fr4f.onrender.com https://*.hostingersite.com",
-        
-        // API Connections - Allow backend API, Google Maps API
-        "connect-src 'self' https://food-delivery-api-fr4f.onrender.com https://*.onrender.com https://maps.googleapis.com https://*.googleapis.com https://*.hostingersite.com https://checkout.razorpay.com wss://*.hostingersite.com",
-        
-        // Media - Allow media from self and backend
-        "media-src 'self' https://food-delivery-api-fr4f.onrender.com blob:",
-        
-        // Frames - Allow Google Maps iframes, Razorpay checkout
-        "frame-src 'self' https://maps.google.com https://www.google.com https://checkout.razorpay.com",
-        
-        // Workers - Allow service workers
-        "worker-src 'self' blob:",
-        
-        // Object/Embed - Block plugins for security
-        "object-src 'none'",
-        
-        // Base URI - Restrict to self
-        "base-uri 'self'",
-        
-        // Forms - Allow form submissions to self and backend
-        "form-action 'self' https://food-delivery-api-fr4f.onrender.com",
-        
-        // Frame ancestors - Prevent clickjacking
-        "frame-ancestors 'self'",
-        
-        // Upgrade insecure requests
-        "upgrade-insecure-requests"
-    );
-    
-    $csp_header = implode('; ', $csp_directives);
-    header("Content-Security-Policy: " . $csp_header);
-    
-    // Also add report-only version for testing (optional)
-    // header("Content-Security-Policy-Report-Only: " . $csp_header);
+    header("Content-Security-Policy: 
+    default-src 'self'; 
+    connect-src 'self' https://food-delivery-api-fr4f.onrender.com https://*.onrender.com https://*.hostingersite.com https://checkout.razorpay.com https://api.razorpay.com https://lumberjack.razorpay.com https://maps.googleapis.com https://*.googleapis.com; 
+    script-src 'self' 'unsafe-inline' 'unsafe-eval' https://checkout.razorpay.com https://api.razorpay.com https://maps.googleapis.com https://*.googleapis.com; 
+    style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; 
+    font-src 'self' data: https://fonts.gstatic.com https://fonts.googleapis.com; 
+    img-src 'self' data: https: http:; 
+    frame-src 'self' https://api.razorpay.com https://checkout.razorpay.com https://maps.google.com https://www.google.com;");
 }
-add_action('send_headers', 'add_food_delivery_csp_headers', 10);
+add_action('send_headers', 'add_full_csp_headers');
+
+// Remove conflicting CSP headers
+function remove_default_csp_headers() {
+    header_remove('Content-Security-Policy');
+    header_remove('X-Content-Security-Policy');
+}
+add_action('init', 'remove_default_csp_headers');
 
 /* ============================================================================
    ADDITIONAL SECURITY HEADERS
