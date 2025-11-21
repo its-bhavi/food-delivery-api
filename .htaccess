@@ -1,15 +1,9 @@
-# BEGIN WordPress CSP Override
+# BEGIN WordPress CSP Override for Razorpay
 <IfModule mod_headers.c>
-    # Remove ALL CSP headers
-    Header unset Content-Security-Policy
-    Header unset X-Content-Security-Policy
-    Header unset X-WebKit-CSP
-    Header unset Content-Security-Policy-Report-Only
-    
-    # Set permissive CSP
-    Header always set Content-Security-Policy "default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; script-src * 'unsafe-inline' 'unsafe-eval'; style-src * 'unsafe-inline'; img-src * data: blob:; font-src * data:; connect-src *; frame-src *;"
+    # Set CSP that allows Razorpay, Google Maps, and Google Fonts
+    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' checkout.razorpay.com api.razorpay.com maps.googleapis.com fonts.googleapis.com; style-src 'self' 'unsafe-inline' fonts.googleapis.com; font-src 'self' fonts.gstatic.com fonts.googleapis.com data:; img-src 'self' data: https: http:; connect-src 'self' https://food-delivery-api-fr4f.onrender.com api.razorpay.com lumberjack.razorpay.com checkout.razorpay.com maps.googleapis.com; frame-src 'self' checkout.razorpay.com api.razorpay.com;"
 </IfModule>
-# END WordPress CSP Override
+# END WordPress CSP Override for Razorpay
 
 # BEGIN WordPress
 # The directives (lines) between "BEGIN WordPress" and "END WordPress" are
