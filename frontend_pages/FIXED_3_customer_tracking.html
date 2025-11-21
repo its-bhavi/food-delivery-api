@@ -267,6 +267,11 @@
             const badge = document.getElementById('orderStatus');
             badge.className = 'status-badge';
             
+            if (!status) {
+                badge.textContent = '⏳ Loading...';
+                return;
+            }
+            
             if (status === 'picked') {
                 badge.textContent = '🚴 On the Way';
                 badge.classList.add('live');
@@ -355,6 +360,10 @@
         script.src = 'https://maps.googleapis.com/maps/api/js?key=AIzaSyD1v0RxpSZc4HvO5GO4dTyGfUqi89oiHI0&callback=initializeApp';
         script.async = true;
         script.defer = true;
+        script.onerror = function() {
+            console.error('❌ Google Maps failed to load. This is expected in development.');
+            document.getElementById('map').innerHTML = '<div style="padding: 20px; text-align: center; color: #666;">📍 Map will load on live website<br><small>Google Maps requires billing to be enabled</small></div>';
+        };
         document.head.appendChild(script);
     </script>
 </body>

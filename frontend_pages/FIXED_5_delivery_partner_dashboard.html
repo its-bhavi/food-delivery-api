@@ -153,14 +153,24 @@
                 const response = await fetch(`${API_BASE}/users/profile/`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
-                if (response.ok) {
-                    const data = await response.json();
-                    document.getElementById('partnerName').textContent = `${data.first_name} ${data.last_name}`;
-                    if (data.delivery_partner) {
-                        document.getElementById('partnerPhone').textContent = data.delivery_partner.phone || '-';
-                        document.getElementById('partnerVehicle').textContent = `${data.delivery_partner.vehicle_type} - ${data.delivery_partner.vehicle_number}`;
-                        document.getElementById('partnerStatus').textContent = data.delivery_partner.status.toUpperCase();
-                    }
+                
+                if (!response.ok) {
+                    console.error('❌ API Error:', await response.text());
+                    return;
+                }
+                
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    console.error('❌ Invalid response - expected JSON');
+                    return;
+                }
+                
+                const data = await response.json();
+                document.getElementById('partnerName').textContent = `${data.first_name || 'N/A'} ${data.last_name || ''}`;
+                if (data.delivery_partner) {
+                    document.getElementById('partnerPhone').textContent = data.delivery_partner.phone || '-';
+                    document.getElementById('partnerVehicle').textContent = `${data.delivery_partner.vehicle_type || 'N/A'} - ${data.delivery_partner.vehicle_number || 'N/A'}`;
+                    document.getElementById('partnerStatus').textContent = (data.delivery_partner.status || 'unknown').toUpperCase();
                 }
             } catch (error) {
                 console.error('❌ Error:', error);
