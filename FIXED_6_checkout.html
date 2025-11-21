@@ -1,0 +1,736 @@
+<div id="main-header"></div>
+<div id="checkout-page">
+    <div class="checkout-header">
+        <a href="/cart/" class="back-link">← Back to Cart</a>
+        <h1>Checkout</h1>
+    </div>
+    
+    <div class="checkout-container">
+        <!-- Order Summary Card -->
+        <div class="order-summary-card">
+            <h3 class="section-title">📦 Order Summary</h3>
+            <div id="cart-items"></div>
+            <div id="price-breakdown"></div>
+        </div>
+        
+        <!-- Delivery Details Form -->
+        <div class="delivery-form-card">
+            <h3 class="section-title">📍 Delivery Details</h3>
+            <form id="checkout-form">
+                <div class="form-field">
+                    <label>Full Name</label>
+                    <input type="text" id="customer-name" placeholder="Enter your name" required>
+                </div>
+                
+                <div class="form-field">
+                    <label>Phone Number</label>
+                    <input type="tel" id="customer-phone" placeholder="10-digit mobile number" pattern="[0-9]{10}" maxlength="10" required>
+                </div>
+                
+                <div class="form-field">
+                    <label>Delivery Address</label>
+                    <textarea id="customer-address" placeholder="House/Flat no., Street, Area" rows="3" required></textarea>
+                </div>
+                
+                <div class="form-field">
+                    <label>Special Instructions (Optional)</label>
+                    <textarea id="order-instructions" placeholder="Any specific instructions for delivery" rows="2"></textarea>
+                </div>
+                
+                <div class="form-field">
+                    <label>Payment Method</label>
+                    <div class="payment-options">
+                        <label class="payment-option">
+                            <input type="radio" name="payment" value="online" required>
+                            <div class="option-content">
+                                <span class="option-icon">💳</span>
+                                <div class="option-text">
+                                    <strong>Pay Online</strong>
+                                    <span>Credit/Debit Card, UPI, Net Banking</span>
+                                </div>
+                            </div>
+                        </label>
+                        
+                        <label class="payment-option">
+                            <input type="radio" name="payment" value="cod" required>
+                            <div class="option-content">
+                                <span class="option-icon">💵</span>
+                                <div class="option-text">
+                                    <strong>Cash on Delivery</strong>
+                                    <span>Pay when you receive</span>
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+                
+                <button type="submit" class="place-order-btn" id="place-order-btn">
+                    <span id="btn-text">Place Order</span>
+                    <span id="btn-amount"></span>
+                </button>
+            </form>
+        </div>
+    </div>
+    
+    <div id="status-alert"></div>
+</div>
+
+<script>
+// ✅ DYNAMICALLY LOAD RAZORPAY SDK (CSP-SAFE)
+function loadRazorpaySDK() {
+    return new Promise((resolve, reject) => {
+        // Check if already loaded
+        if (window.Razorpay) {
+            resolve();
+            return;
+        }
+        
+        // Check if script already exists
+        if (document.querySelector('script[src*="razorpay"]')) {
+            // Wait for it to load
+            const checkInterval = setInterval(() => {
+                if (window.Razorpay) {
+                    clearInterval(checkInterval);
+                    resolve();
+                }
+            }, 100);
+            
+            setTimeout(() => {
+                clearInterval(checkInterval);
+                if (!window.Razorpay) {
+                    reject(new Error('Razorpay SDK failed to load'));
+                }
+            }, 10000); // 10 second timeout
+            return;
+        }
+        
+        // Create and load script dynamically
+        const script = document.createElement('script');
+        script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+        script.async = true;
+        script.defer = true;
+        
+        script.onload = () => {
+            console.log('✅ Razorpay SDK loaded successfully');
+            resolve();
+        };
+        
+        script.onerror = () => {
+            reject(new Error('Failed to load Razorpay SDK'));
+        };
+        
+        document.head.appendChild(script);
+    });
+}
+
+// ✅ API & RAZORPAY CONFIG
+const API = 'https://food-delivery-api-fr4f.onrender.com/api';
+const RZP_KEY = 'rzp_test_Rf8SX4fcBCXLU3';
+
+let orderData = {
+    cart: [],
+    subtotal: 0,
+    deliveryCharge: 50,
+    tax: 0,
+    total: 0
+};
+
+let razorpayLoaded = false;
+
+// ========================================
+// DISPLAY CART
+// ========================================
+function displayCart() {
+    const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+    
+    if (!cart.length) {
+        document.getElementById('checkout-page').innerHTML = `
+            <div class="empty-checkout">
+                <div class="empty-icon">🛒</div>
+                <h2>Your cart is empty</h2>
+                <p>Add items to your cart to proceed with checkout</p>
+                <a href="/restaurants/" class="browse-btn">Browse Restaurants</a>
+            </div>
+        `;
+        return;
+    }
+    
+    // Calculate totals
+    const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const deliveryCharge = 50;
+    const tax = subtotal * 0.05; // 5% GST
+    const total = subtotal + deliveryCharge + tax;
+    
+    // Store for later use
+    orderData = { cart, subtotal, deliveryCharge, tax, total };
+    
+    // Display items
+    let itemsHtml = '<div class="cart-items-list">';
+    cart.forEach(item => {
+        itemsHtml += `
+            <div class="cart-item-row">
+                <div class="item-details">
+                    <span class="item-qty">${item.quantity}x</span>
+                    <span class="item-name">${item.name}</span>
+                </div>
+                <span class="item-price">₹${(item.price * item.quantity).toFixed(0)}</span>
+            </div>
+        `;
+    });
+    itemsHtml += '</div>';
+    
+    // Display price breakdown
+    const breakdownHtml = `
+        <div class="price-breakdown">
+            <div class="price-row">
+                <span>Item Total</span>
+                <span>₹${subtotal.toFixed(0)}</span>
+            </div>
+            <div class="price-row">
+                <span>Delivery Fee</span>
+                <span>₹${deliveryCharge.toFixed(0)}</span>
+            </div>
+            <div class="price-row">
+                <span>GST & Charges</span>
+                <span>₹${tax.toFixed(0)}</span>
+            </div>
+            <div class="price-divider"></div>
+            <div class="price-row total-row">
+                <strong>To Pay</strong>
+                <strong>₹${total.toFixed(0)}</strong>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('cart-items').innerHTML = itemsHtml;
+    document.getElementById('price-breakdown').innerHTML = breakdownHtml;
+    document.getElementById('btn-amount').textContent = `₹${total.toFixed(0)}`;
+}
+
+// ========================================
+// FORM SUBMIT
+// ========================================
+document.getElementById('checkout-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    // Check login
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+        showAlert('error', 'Please login to place order');
+        setTimeout(() => window.location.href = '/login/', 1500);
+        return;
+    }
+    
+    // Get form data
+    const customerName = document.getElementById('customer-name').value.trim();
+    const customerPhone = document.getElementById('customer-phone').value.trim();
+    const customerAddress = document.getElementById('customer-address').value.trim();
+    const instructions = document.getElementById('order-instructions').value.trim();
+    const paymentMethod = document.querySelector('input[name="payment"]:checked')?.value;
+    
+    if (!paymentMethod) {
+        showAlert('error', 'Please select a payment method');
+        return;
+    }
+    
+    // Generate order number
+    const orderNumber = 'ORD' + Date.now();
+    
+    // Disable button
+    const submitBtn = document.getElementById('place-order-btn');
+    submitBtn.disabled = true;
+    document.getElementById('btn-text').textContent = 'Processing...';
+    
+    if (paymentMethod === 'online') {
+        await processOnlinePayment(orderNumber, customerName, customerPhone, customerAddress, instructions, token);
+    } else {
+        await placeCODOrder(orderNumber, customerName, customerPhone, customerAddress, instructions, token);
+    }
+});
+
+// ========================================
+// ONLINE PAYMENT (RAZORPAY)
+// ========================================
+async function processOnlinePayment(orderNumber, name, phone, address, instructions, token) {
+    try {
+        showAlert('info', 'Initializing payment...');
+        
+        // ✅ ENSURE RAZORPAY SDK IS LOADED
+        if (!razorpayLoaded) {
+            showAlert('info', 'Loading payment gateway...');
+            await loadRazorpaySDK();
+            razorpayLoaded = true;
+        }
+        
+        // Verify Razorpay is available
+        if (typeof Razorpay === 'undefined') {
+            throw new Error('Payment gateway failed to load. Please refresh and try again.');
+        }
+        
+        // Create Razorpay order
+        const response = await fetch(API + '/payments/razorpay-order/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify({
+                amount: orderData.total,
+                order_number: orderNumber
+            })
+        });
+        
+        const razorpayData = await response.json();
+        console.log('Razorpay order:', razorpayData);
+        
+        if (!razorpayData.success) {
+            throw new Error(razorpayData.error || 'Failed to create payment order');
+        }
+        
+        showAlert('info', 'Opening payment gateway...');
+        
+        // Open Razorpay checkout
+        const options = {
+            key: RZP_KEY,
+            amount: razorpayData.amount,
+            currency: 'INR',
+            name: 'Food Delivery',
+            description: 'Order Payment',
+            order_id: razorpayData.id,
+            handler: async function(response) {
+                showAlert('info', 'Payment successful! Creating order...');
+                await createOrder(orderNumber, name, phone, address, instructions, 'online', response.razorpay_payment_id, token);
+            },
+            prefill: {
+                name: name,
+                contact: phone
+            },
+            theme: {
+                color: '#fc8019'
+            },
+            modal: {
+                ondismiss: function() {
+                    showAlert('error', 'Payment cancelled');
+                    document.getElementById('place-order-btn').disabled = false;
+                    document.getElementById('btn-text').textContent = 'Place Order';
+                }
+            }
+        };
+        
+        const razorpay = new Razorpay(options);
+        razorpay.open();
+        
+    } catch (error) {
+        console.error('Payment error:', error);
+        showAlert('error', error.message);
+        document.getElementById('place-order-btn').disabled = false;
+        document.getElementById('btn-text').textContent = 'Place Order';
+    }
+}
+
+// ========================================
+// COD ORDER
+// ========================================
+async function placeCODOrder(orderNumber, name, phone, address, instructions, token) {
+    showAlert('info', 'Creating your order...');
+    await createOrder(orderNumber, name, phone, address, instructions, 'cod', null, token);
+}
+
+// ========================================
+// CREATE ORDER API CALL
+// ========================================
+async function createOrder(orderNumber, name, phone, address, instructions, paymentMethod, paymentId, token) {
+    try {
+        const orderPayload = {
+            restaurant: orderData.cart[0].restaurant_id,
+            delivery_address: address,
+            customer_phone: phone,
+            payment_method: paymentMethod,
+            instructions: instructions || '',
+            order_number: orderNumber,
+            items: orderData.cart.map(item => ({
+                menu_item_id: item.id,
+                quantity: item.quantity,
+                price: item.price
+            }))
+        };
+        
+        if (paymentId) {
+            orderPayload.payment_id = paymentId;
+        }
+        
+        console.log('Creating order:', orderPayload);
+        
+        const response = await fetch(API + '/orders/create/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify(orderPayload)
+        });
+        
+        console.log('Order response status:', response.status);
+        const data = await response.json();
+        console.log('Order response data:', data);
+        
+        if (response.status === 201) {
+            showAlert('success', '✅ Order placed successfully!');
+            localStorage.removeItem('cart');
+            
+            setTimeout(() => {
+                window.location.href = '/order-confirmation/?order=' + data.order_number;
+            }, 1500);
+        } else {
+            throw new Error(data.error || data.detail || 'Failed to create order');
+        }
+        
+    } catch (error) {
+        console.error('Order creation error:', error);
+        showAlert('error', '❌ ' + error.message);
+        document.getElementById('place-order-btn').disabled = false;
+        document.getElementById('btn-text').textContent = 'Place Order';
+    }
+}
+
+// ========================================
+// SHOW ALERT
+// ========================================
+function showAlert(type, message) {
+    const alertDiv = document.getElementById('status-alert');
+    const alertClass = type === 'error' ? 'alert-error' : type === 'success' ? 'alert-success' : 'alert-info';
+    
+    alertDiv.innerHTML = `<div class="${alertClass}">${message}</div>`;
+    alertDiv.scrollIntoView({ behavior: 'smooth' });
+}
+
+// ========================================
+// INITIALIZE ON PAGE LOAD
+// ========================================
+// Load cart on page load
+displayCart();
+
+// Preload Razorpay SDK when page loads (but don't block)
+loadRazorpaySDK()
+    .then(() => {
+        razorpayLoaded = true;
+        console.log('✅ Razorpay SDK preloaded successfully');
+    })
+    .catch(err => {
+        console.warn('⚠️ Razorpay SDK preload failed, will retry on payment:', err);
+    });
+</script>
+
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #f8f8f8;
+}
+
+#checkout-page {
+    max-width: 700px;
+    margin: 0 auto;
+    padding: 20px;
+    background: white;
+    min-height: 100vh;
+}
+
+/* Header */
+.checkout-header {
+    margin-bottom: 20px;
+}
+
+.back-link {
+    display: inline-block;
+    color: #7e808c;
+    text-decoration: none;
+    font-size: 14px;
+    margin-bottom: 10px;
+}
+
+.checkout-header h1 {
+    font-size: 24px;
+    font-weight: 600;
+    color: #282c3f;
+}
+
+/* Cards */
+.order-summary-card,
+.delivery-form-card {
+    background: #f8f8f8;
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+}
+
+.section-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #282c3f;
+    margin-bottom: 15px;
+}
+
+/* Cart Items */
+.cart-items-list {
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+}
+
+.cart-item-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #f0f0f5;
+}
+
+.cart-item-row:last-child {
+    border-bottom: none;
+}
+
+.item-details {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.item-qty {
+    color: #7e808c;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.item-name {
+    color: #282c3f;
+    font-size: 14px;
+}
+
+.item-price {
+    font-weight: 600;
+    color: #282c3f;
+}
+
+/* Price Breakdown */
+.price-breakdown {
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+}
+
+.price-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    color: #282c3f;
+    font-size: 14px;
+}
+
+.price-divider {
+    border-top: 1px dashed #d4d5d9;
+    margin: 10px 0;
+}
+
+.total-row {
+    font-size: 18px;
+    color: #fc8019;
+    padding-top: 10px;
+}
+
+/* Form Fields */
+.form-field {
+    margin-bottom: 20px;
+}
+
+.form-field label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #282c3f;
+}
+
+.form-field input,
+.form-field textarea {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid #d4d5d9;
+    border-radius: 8px;
+    font-size: 15px;
+    transition: all 0.3s;
+}
+
+.form-field input:focus,
+.form-field textarea:focus {
+    outline: none;
+    border-color: #fc8019;
+    box-shadow: 0 0 0 3px rgba(252,128,25,0.1);
+}
+
+/* Payment Options */
+.payment-options {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.payment-option {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    background: white;
+    border: 2px solid #d4d5d9;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.payment-option:hover {
+    border-color: #fc8019;
+}
+
+.payment-option input[type="radio"] {
+    margin-right: 12px;
+    width: 18px;
+    height: 18px;
+    accent-color: #fc8019;
+}
+
+.option-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+}
+
+.option-icon {
+    font-size: 24px;
+}
+
+.option-text {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.option-text strong {
+    font-size: 15px;
+    color: #282c3f;
+}
+
+.option-text span {
+    font-size: 13px;
+    color: #7e808c;
+}
+
+/* Place Order Button */
+.place-order-btn {
+    width: 100%;
+    padding: 16px;
+    background: #60b246;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.3s;
+}
+
+.place-order-btn:hover:not(:disabled) {
+    background: #48a839;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(96,178,70,0.3);
+}
+
+.place-order-btn:disabled {
+    background: #d4d5d9;
+    cursor: not-allowed;
+}
+
+/* Alerts */
+#status-alert {
+    margin-top: 20px;
+}
+
+.alert-error,
+.alert-success,
+.alert-info {
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 14px;
+    margin-bottom: 15px;
+}
+
+.alert-error {
+    background: #fff3f3;
+    color: #e74c3c;
+    border: 1px solid #fcc;
+}
+
+.alert-success {
+    background: #f3fff3;
+    color: #60b246;
+    border: 1px solid #cfc;
+}
+
+.alert-info {
+    background: #f3f8ff;
+    color: #3498db;
+    border: 1px solid #90caf9;
+}
+
+/* Empty State */
+.empty-checkout {
+    text-align: center;
+    padding: 100px 20px;
+}
+
+.empty-icon {
+    font-size: 60px;
+    margin-bottom: 20px;
+}
+
+.empty-checkout h2 {
+    font-size: 22px;
+    color: #282c3f;
+    margin-bottom: 10px;
+}
+
+.empty-checkout p {
+    color: #7e808c;
+    margin-bottom: 25px;
+}
+
+.browse-btn {
+    display: inline-block;
+    padding: 12px 30px;
+    background: #fc8019;
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: 600;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    #checkout-page {
+        padding: 16px;
+    }
+    
+    .order-summary-card,
+    .delivery-form-card {
+        padding: 16px;
+    }
+}
+</style>
