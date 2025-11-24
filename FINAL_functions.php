@@ -218,7 +218,7 @@ define('RAZORPAY_KEY_ID', 'rzp_test_Rf8SX4fcBCXLU3');
 define('RAZORPAY_KEY_SECRET', 'oAqctnCPvGY1S4u2Uxqo6FR7');
 
 // Google Maps API Key
-define('GOOGLE_MAPS_API_KEY', 'AIzaSyD1v0RxpSZc4HvO5GO4dTyGfUqi89oiHI0');
+define('GOOGLE_MAPS_API_KEY', 'AIzaSyAMeehYlcfmKARKqpP--BVZj7C6GZCUqIQ');
 
 /* ============================================================================
    CSP HEADERS - NO RESTRICTIONS FOR RAZORPAY AND MAPS
