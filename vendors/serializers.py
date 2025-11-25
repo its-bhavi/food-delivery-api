@@ -4,6 +4,8 @@ from .models import Restaurant, MenuCategory, MenuItem
 
 # MenuItem Serializer
 class MenuItemSerializer(serializers.ModelSerializer):
+    image_url = serializers.SerializerMethodField()
+    
     class Meta:
         model = MenuItem
         fields = [
@@ -11,12 +13,16 @@ class MenuItemSerializer(serializers.ModelSerializer):
             'name',
             'description',
             'price',
-            'image',
+            'image_url',  # Changed from 'image'
             'is_veg',
             'is_available',
             'preparation_time',
             'category',
         ]
+    
+    def get_image_url(self, obj):
+        # Return None for Railway deployment (no media files)
+        return None
 
 
 # Menu Category Serializer (with items)
@@ -54,6 +60,7 @@ class RestaurantListSerializer(serializers.ModelSerializer):
 class RestaurantDetailSerializer(serializers.ModelSerializer):
     menu_items = MenuItemSerializer(many=True, read_only=True)
     categories = MenuCategorySerializer(many=True, read_only=True)
+    image_url = serializers.SerializerMethodField()
     
     class Meta:
         model = Restaurant
@@ -65,7 +72,7 @@ class RestaurantDetailSerializer(serializers.ModelSerializer):
             'address',
             'latitude',
             'longitude',
-            'image',
+            'image_url',  # Changed from 'image'
             'rating',
             'opening_time',
             'closing_time',
@@ -73,3 +80,7 @@ class RestaurantDetailSerializer(serializers.ModelSerializer):
             'menu_items',
             'categories',
         ]
+    
+    def get_image_url(self, obj):
+        # Return None for Railway deployment (no media files)
+        return None
