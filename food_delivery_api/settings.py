@@ -158,16 +158,21 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 # CORS Settings
-# CORS Configuration - Allow WordPress Domain
-CORS_ALLOW_ALL_ORIGINS = True  # Allow all origins for now
+# CORS Configuration - Allow WordPress Domain + Railway Domain
+CORS_ALLOW_ALL_ORIGINS = True  # ✅ Allow all origins (Railway Production)
 
-# Production specific domains
-CORS_ALLOWED_ORIGINS = [
-    "https://lightskyblue-ostrich-354680.hostingersite.com",
-    "https://food-delivery-api-production-1d00.up.railway.app",
-    "http://localhost:3000",
-    "http://127.0.0.1:8000",
-]
+# Parse CORS_ALLOWED_ORIGINS from environment variable if provided
+import os
+cors_env = os.environ.get('CORS_ALLOWED_ORIGINS', '')
+if cors_env:
+    CORS_ALLOWED_ORIGINS = [origin.strip() for origin in cors_env.split(',')]
+else:
+    CORS_ALLOWED_ORIGINS = [
+        "https://lightskyblue-ostrich-354680.hostingersite.com",
+        "https://food-delivery-api-production-1d00.up.railway.app",
+        "http://localhost:3000",
+        "http://127.0.0.1:8000",
+    ]
 
 CORS_ALLOW_METHODS = ['DELETE', 'GET', 'OPTIONS', 'PATCH', 'POST', 'PUT']
 
