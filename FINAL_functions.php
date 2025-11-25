@@ -292,4 +292,118 @@ add_action('send_headers', 'add_cors_headers', 1);
 // Remove WordPress version and generator tags
 remove_action('wp_head', 'wp_generator');
 
+/* ============================================================================
+   ROLE-BASED MENU FILTERING
+   ============================================================================ */
+
+// Register custom user roles
+function register_food_delivery_roles() {
+    // Customer role
+    if (!get_role('customer')) {
+        add_role('customer', 'Customer', array(
+            'read' => true,
+            'edit_posts' => false,
+            'delete_posts' => false,
+        ));
+    }
+    
+    // Restaurant Owner role
+    if (!get_role('restaurant_owner')) {
+        add_role('restaurant_owner', 'Restaurant Owner', array(
+            'read' => true,
+            'edit_posts' => false,
+            'delete_posts' => false,
+        ));
+    }
+    
+    // Delivery Partner role
+    if (!get_role('delivery_partner')) {
+        add_role('delivery_partner', 'Delivery Partner', array(
+            'read' => true,
+            'edit_posts' => false,
+            'delete_posts' => false,
+        ));
+    }
+}
+add_action('init', 'register_food_delivery_roles');
+
+// Filter menu items based on user role
+function filter_menu_by_role($items, $args) {
+    if (!is_user_logged_in()) {
+        // Remove logged-in only pages for guests
+        $guest_hidden_slugs = array(
+            'my-orders', 'cart', 'checkout', 'track-order', 'order-status', 'order-confirmation',
+            'restaurant-dashboard', 'restaurant-profile', 'restaurant-detail',
+            'delivery-partner-dashboard', 'delivery-partner-profile'
+        );
+        
+        foreach ($items as $key => $item) {
+            if ($item->object == 'page') {
+                $page_slug = get_post_field('post_name', $item->object_id);
+                if (in_array($page_slug, $guest_hidden_slugs)) {
+                    unset($items[$key]);
+                }
+            }
+        }
+        return $items;
+    }
+    
+    $user = wp_get_current_user();
+    $user_roles = $user->roles;
+    $user_role = !empty($user_roles) ? $user_roles[0] : 'subscriber';
+    
+    // Pages to hide based on role
+    $hide_slugs = array();
+    
+    if ($user_role === 'customer' || $user_role === 'subscriber') {
+        // Hide vendor and delivery pages from customers
+        $hide_slugs = array(
+            'restaurant-dashboard', 'restaurant-profile', 'restaurant-detail',
+            'delivery-partner-dashboard', 'delivery-partner-profile'
+        );
+    } 
+    elseif ($user_role === 'restaurant_owner') {
+        // Hide customer and delivery pages from restaurant owners
+        $hide_slugs = array(
+            'my-orders', 'cart', 'checkout', 'track-order', 'order-confirmation',
+            'delivery-partner-dashboard', 'delivery-partner-profile'
+        );
+    } 
+    elseif ($user_role === 'delivery_partner') {
+        // Hide customer and vendor pages from delivery partners
+        $hide_slugs = array(
+            'my-orders', 'cart', 'checkout', 'track-order', 'order-status', 'order-confirmation',
+            'restaurant-dashboard', 'restaurant-profile', 'restaurant-detail'
+        );
+    }
+    
+    // Remove hidden pages from menu
+    foreach ($items as $key => $item) {
+        if ($item->object == 'page') {
+            $page_slug = get_post_field('post_name', $item->object_id);
+            if (in_array($page_slug, $hide_slugs)) {
+                unset($items[$key]);
+            }
+        }
+    }
+    
+    return $items;
+}
+add_filter('wp_nav_menu_objects', 'filter_menu_by_role', 10, 2);
+
+// Add role class to body tag for CSS targeting
+function add_role_class_to_body($classes) {
+    if (is_user_logged_in()) {
+        $user = wp_get_current_user();
+        $user_roles = $user->roles;
+        $user_role = !empty($user_roles) ? $user_roles[0] : 'subscriber';
+        $classes[] = 'role-' . $user_role;
+        $classes[] = 'logged-in';
+    } else {
+        $classes[] = 'not-logged-in';
+    }
+    return $classes;
+}
+add_filter('body_class', 'add_role_class_to_body');
+
 ?>
