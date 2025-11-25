@@ -1,0 +1,24 @@
+// FILES TO UPDATE WITH NEW RAILWAY URL
+// Replace: https://food-delivery-api-fr4f.onrender.com/api
+// With: https://YOUR-APP-NAME.railway.app/api
+
+1. FIXED_login_page.html (line 140)
+   const API_BASE_URL = 'https://YOUR-APP-NAME.railway.app/api';
+
+2. FIXED_1_restaurant_profile.html
+   const API_BASE_URL = 'https://YOUR-APP-NAME.railway.app/api';
+
+3. FIXED_3_customer_tracking.html
+   const API_BASE_URL = 'https://YOUR-APP-NAME.railway.app/api';
+
+4. FIXED_4_restaurant_dashboard.html
+   const API_BASE_URL = 'https://YOUR-APP-NAME.railway.app/api';
+
+5. FIXED_5_delivery_partner_dashboard.html
+   const API_BASE_URL = 'https://YOUR-APP-NAME.railway.app/api';
+
+6. WordPress .htaccess (Content-Security-Policy)
+   Add Railway domain to CSP whitelist
+
+7. FINAL_functions.php (if API calls exist)
+   Update any API endpoint references
