@@ -4,6 +4,7 @@ from .models import Restaurant, MenuCategory, MenuItem
 
 # MenuItem Serializer
 class MenuItemSerializer(serializers.ModelSerializer):
+    # Handle image field gracefully
     image_url = serializers.SerializerMethodField()
     
     class Meta:
@@ -13,7 +14,7 @@ class MenuItemSerializer(serializers.ModelSerializer):
             'name',
             'description',
             'price',
-            'image_url',  # Changed from 'image'
+            'image_url',
             'is_veg',
             'is_available',
             'preparation_time',
@@ -21,7 +22,7 @@ class MenuItemSerializer(serializers.ModelSerializer):
         ]
     
     def get_image_url(self, obj):
-        # Return None for Railway deployment (no media files)
+        # Return None for now - can add Cloudinary/S3 later
         return None
 
 
@@ -72,7 +73,7 @@ class RestaurantDetailSerializer(serializers.ModelSerializer):
             'address',
             'latitude',
             'longitude',
-            'image_url',  # Changed from 'image'
+            'image_url',
             'rating',
             'opening_time',
             'closing_time',
@@ -82,5 +83,5 @@ class RestaurantDetailSerializer(serializers.ModelSerializer):
         ]
     
     def get_image_url(self, obj):
-        # Return None for Railway deployment (no media files)
+        # Return None for now - can add Cloudinary/S3 later
         return None

@@ -157,24 +157,19 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
-# CORS Settings - Allow WordPress and Railway domains
-CORS_ALLOW_ALL_ORIGINS = False  # Security ke liye False
+# CORS Settings
+# CORS Configuration - Allow WordPress Domain
+CORS_ALLOW_ALL_ORIGINS = True  # Allow all origins for now
 
+# Production specific domains
 CORS_ALLOWED_ORIGINS = [
-    "https://lightskyblue-ostrich-354680.hostingersite.com",  # WordPress domain
-    "https://food-delivery-api-production-1d00.up.railway.app",  # Railway domain
-    "http://localhost:8000",
+    "https://lightskyblue-ostrich-354680.hostingersite.com",
+    "https://food-delivery-api-production-1d00.up.railway.app",
+    "http://localhost:3000",
     "http://127.0.0.1:8000",
 ]
 
-CORS_ALLOW_METHODS = [
-    'DELETE',
-    'GET',
-    'OPTIONS',
-    'PATCH',
-    'POST',
-    'PUT',
-]
+CORS_ALLOW_METHODS = ['DELETE', 'GET', 'OPTIONS', 'PATCH', 'POST', 'PUT']
 
 CORS_ALLOW_HEADERS = [
     'accept',
@@ -189,12 +184,13 @@ CORS_ALLOW_HEADERS = [
 ]
 
 CORS_ALLOW_CREDENTIALS = True
-CORS_PREFLIGHT_MAX_AGE = 86400  # 24 hours
+CORS_PREFLIGHT_MAX_AGE = 86400
 
+# CSRF Settings
 CSRF_TRUSTED_ORIGINS = [
     'https://lightskyblue-ostrich-354680.hostingersite.com',
     'https://*.hostingersite.com',
-    'https://food-delivery-api-production-1d00.up.railway.app',  # Railway URL
+    'https://food-delivery-api-production-1d00.up.railway.app',
     'https://*.railway.app',
     'http://localhost:8000',
 ]
