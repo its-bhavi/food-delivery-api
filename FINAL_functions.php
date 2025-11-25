@@ -211,7 +211,7 @@ require_once ASTRA_THEME_DIR . 'inc/core/deprecated/deprecated-functions.php';
    ============================================================================ */
 
 // API Base URL
-define('API_BASE_URL', 'https://food-delivery-api-fr4f.onrender.com/api');
+define('API_BASE_URL', 'https://food-delivery-api-production-1d00.up.railway.app/api');
 
 // Razorpay Configuration
 define('RAZORPAY_KEY_ID', 'rzp_test_Rf8SX4fcBCXLU3');
