@@ -1,0 +1,92 @@
+[
+{
+  "model": "auth.user",
+  "pk": 1,
+  "fields": {
+    "password": "pbkdf2_sha256$1000000$bH3g3ydF22hXZB39N8iObM$9p/OY+djc8+fBRrP+0rpVwmNXf3sr5Uxm6t3lxH6YnY=",
+    "last_login": "2025-10-30T05:57:00Z",
+    "is_superuser": true,
+    "username": "admin",
+    "first_name": "Bhavya",
+    "last_name": "Singh",
+    "email": "bhavya.singh@concientech.com",
+    "is_staff": true,
+    "is_active": true,
+    "date_joined": "2025-10-30T05:51:19Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "auth.user",
+  "pk": 2,
+  "fields": {
+    "password": "pbkdf2_sha256$1000000$BfOqvRyN11PrG0uUBeN3WY$bNrtMX/bOn2ClM/isP/1Ma/h4IHCHREXacq0XSO3skQ=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "testuser",
+    "first_name": "Test",
+    "last_name": "User",
+    "email": "test@example.com",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2025-10-30T07:31:09Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "auth.user",
+  "pk": 3,
+  "fields": {
+    "password": "pbkdf2_sha256$1000000$rDp5ZwQ6s8qNNKoiFF7YnA$7FYjCWNhImmMG85+Obhc/8B4XiGs4/rK19h1j0isiAw=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "newcustomer",
+    "first_name": "Rahul",
+    "last_name": "Sharma",
+    "email": "customer@test.com",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2025-10-30T09:51:29.970Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "auth.user",
+  "pk": 4,
+  "fields": {
+    "password": "pbkdf2_sha256$1000000$bLcFRi1BJFEPuYMGsi4k6q$v4uTJRRq6p2uTyLJNKSPX783drm3C0dsXZrQ4iThgcY=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "delivery1",
+    "first_name": "",
+    "last_name": "",
+    "email": "",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2025-10-30T10:07:22.572Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "auth.user",
+  "pk": 5,
+  "fields": {
+    "password": "pbkdf2_sha256$1000000$TWYKIqIfPJmP4R3Aw7AVOo$iVTzAuH4Liifz5+ltTI6GQW6KHzsfcbsSq6OqLBcgf8=",
+    "last_login": "2025-10-31T05:15:26.275Z",
+    "is_superuser": true,
+    "username": "admin1",
+    "first_name": "",
+    "last_name": "",
+    "email": "singhbhvaya@gmail.com",
+    "is_staff": true,
+    "is_active": true,
+    "date_joined": "2025-10-31T05:14:37.452Z",
+    "groups": [],
+    "user_permissions": []
+  }
+}
+]

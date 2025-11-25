@@ -1,0 +1,19 @@
+[
+{
+  "model": "vendors.menuitem",
+  "pk": 1,
+  "fields": {
+    "restaurant": 1,
+    "category": null,
+    "name": "Margherita Pizza",
+    "description": "Classic cheese pizza",
+    "price": "299.00",
+    "image": "menu_items/four-cheese-margherita-pizza-recipe-12-scaled.jpg",
+    "is_veg": true,
+    "is_available": true,
+    "preparation_time": 20,
+    "created_at": "2025-10-30T06:52:59.417Z",
+    "updated_at": "2025-10-30T06:52:59.417Z"
+  }
+}
+]

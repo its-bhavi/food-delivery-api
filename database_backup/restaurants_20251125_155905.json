@@ -1,0 +1,22 @@
+[
+{
+  "model": "vendors.restaurant",
+  "pk": 1,
+  "fields": {
+    "name": "Pizza Paradise",
+    "owner": 1,
+    "phone": "9876543210",
+    "email": "pizza@test.com",
+    "address": "123 Main Street, Delhi",
+    "latitude": null,
+    "longitude": null,
+    "image": "restaurants/mau3.jpg",
+    "rating": "0.00",
+    "is_active": true,
+    "opening_time": "10:00:00",
+    "closing_time": "22:00:00",
+    "created_at": "2025-10-30T06:45:41.863Z",
+    "updated_at": "2025-10-30T06:54:07.068Z"
+  }
+}
+]

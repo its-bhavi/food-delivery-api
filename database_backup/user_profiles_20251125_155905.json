@@ -1,0 +1,34 @@
+[
+{
+  "model": "users.userprofile",
+  "pk": 1,
+  "fields": {
+    "user": 3,
+    "user_type": "customer",
+    "phone": "9988776655",
+    "profile_picture": "",
+    "default_address": "",
+    "default_latitude": null,
+    "default_longitude": null,
+    "date_of_birth": null,
+    "created_at": "2025-10-30T09:51:30.548Z",
+    "updated_at": "2025-10-30T09:51:30.548Z"
+  }
+},
+{
+  "model": "users.userprofile",
+  "pk": 2,
+  "fields": {
+    "user": 4,
+    "user_type": "delivery",
+    "phone": "8877665544",
+    "profile_picture": "",
+    "default_address": "",
+    "default_latitude": null,
+    "default_longitude": null,
+    "date_of_birth": null,
+    "created_at": "2025-10-30T10:08:10.377Z",
+    "updated_at": "2025-10-30T10:08:10.377Z"
+  }
+}
+]

@@ -1,0 +1,20 @@
+[
+{
+  "model": "delivery.deliverypartner",
+  "pk": 1,
+  "fields": {
+    "user": 4,
+    "phone": "8877665544",
+    "vehicle_number": "DL01AB1234",
+    "vehicle_type": "Bike",
+    "license_number": "DL1234567890",
+    "current_latitude": "299.072319",
+    "current_longitude": "781.344332",
+    "status": "busy",
+    "rating": "0.00",
+    "total_deliveries": 0,
+    "is_verified": false,
+    "created_at": "2025-10-30T10:13:27.774Z"
+  }
+}
+]
