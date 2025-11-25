@@ -30,17 +30,24 @@ class MenuCategorySerializer(serializers.ModelSerializer):
 
 # Restaurant List Serializer (basic info)
 class RestaurantListSerializer(serializers.ModelSerializer):
+    # Temporarily exclude image to avoid media file errors on Railway
+    image_url = serializers.SerializerMethodField()
+    
     class Meta:
         model = Restaurant
         fields = [
             'id',
             'name',
-            'image',
+            'image_url',
             'rating',
             'opening_time',
             'closing_time',
             'is_active',
         ]
+    
+    def get_image_url(self, obj):
+        # Return placeholder or None if image doesn't exist
+        return None  # Can add real image URL later
 
 
 # Restaurant Detail Serializer (complete info with menu)
