@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Test - Railway Deployment Check</title>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #1e1e1e; color: #d4d4d4; }
+        .test { margin: 10px 0; padding: 15px; border-radius: 8px; background: #2d2d2d; }
+        .success { border-left: 4px solid #4caf50; }
+        .error { border-left: 4px solid #f44336; }
+        .pending { border-left: 4px solid #ff9800; }
+        button { padding: 10px 20px; background: #fc8019; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; margin: 5px; }
+        button:hover { background: #e67316; }
+        .response { background: #1a1a1a; padding: 10px; border-radius: 4px; margin-top: 10px; font-size: 12px; overflow-x: auto; }
+        h1 { color: #fc8019; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Railway API Deployment Checker</h1>
+    <p>Check if Railway backend is deployed and working correctly</p>
+    
+    <button onclick="runAllTests()">🚀 Run All Tests</button>
+    <button onclick="checkToken()">🔑 Check Login Token</button>
+    
+    <div id="results"></div>
+    
+    <script>
+        const API_BASE = 'https://food-delivery-api-production-1d00.up.railway.app/api';
+        
+        function getToken() {
+            return localStorage.getItem('access_token') || 
+                   localStorage.getItem('authToken') || 
+                   sessionStorage.getItem('authToken');
+        }
+        
+        function addResult(title, status, message, response = null) {
+            const div = document.createElement('div');
+            div.className = `test ${status}`;
+            div.innerHTML = `
+                <strong>${status === 'success' ? '✅' : status === 'error' ? '❌' : '⏳'} ${title}</strong>
+                <p>${message}</p>
+                ${response ? `<div class="response">${JSON.stringify(response, null, 2)}</div>` : ''}
+            `;
+            document.getElementById('results').appendChild(div);
+        }
+        
+        function checkToken() {
+            const token = getToken();
+            if (token) {
+                addResult('Token Check', 'success', `Token found: ${token.substring(0, 20)}...`);
+            } else {
+                addResult('Token Check', 'error', 'No token found! Please login first.');
+            }
+        }
+        
+        async function runAllTests() {
+            document.getElementById('results').innerHTML = '<h2>Running Tests...</h2>';
+            
+            // Test 1: API Root
+            try {
+                const response = await fetch(`${API_BASE}/vendors/restaurants/`);
+                if (response.ok) {
+                    const data = await response.json();
+                    addResult('Test 1: Restaurant List API', 'success', `Found ${data.length} restaurants`, data);
+                } else {
+                    addResult('Test 1: Restaurant List API', 'error', `Status: ${response.status}`);
+                }
+            } catch (error) {
+                addResult('Test 1: Restaurant List API', 'error', error.message);
+            }
+            
+            // Test 2: Token Check
+            const token = getToken();
+            if (token) {
+                addResult('Test 2: Authentication Token', 'success', 'Token exists');
+                
+                // Test 3: Vendor Profile
+                try {
+                    const response = await fetch(`${API_BASE}/vendors/profile/`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        addResult('Test 3: Vendor Profile', 'success', `Restaurant: ${data.name}`, data);
+                    } else if (response.status === 404) {
+                        addResult('Test 3: Vendor Profile', 'error', 'Profile not found - Create restaurant profile first');
+                    } else {
+                        addResult('Test 3: Vendor Profile', 'error', `Status: ${response.status}`);
+                    }
+                } catch (error) {
+                    addResult('Test 3: Vendor Profile', 'error', error.message);
+                }
+                
+                // Test 4: Menu Items Endpoint
+                try {
+                    const response = await fetch(`${API_BASE}/vendors/menu-items/`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    
+                    console.log('Menu items response status:', response.status);
+                    const responseText = await response.text();
+                    console.log('Menu items response:', responseText);
+                    
+                    if (response.ok) {
+                        const data = JSON.parse(responseText);
+                        addResult('Test 4: Menu Items API', 'success', `Found ${data.count || 0} menu items`, data);
+                    } else {
+                        addResult('Test 4: Menu Items API', 'error', 
+                            `Status ${response.status}: ${responseText.substring(0, 200)}`);
+                    }
+                } catch (error) {
+                    addResult('Test 4: Menu Items API', 'error', error.message);
+                }
+                
+                // Test 5: CORS Check
+                try {
+                    const response = await fetch(`${API_BASE}/vendors/profile/`, {
+                        method: 'OPTIONS',
+                        headers: { 
+                            'Origin': window.location.origin,
+                            'Access-Control-Request-Method': 'POST',
+                            'Access-Control-Request-Headers': 'authorization,content-type'
+                        }
+                    });
+                    
+                    if (response.ok || response.status === 200) {
+                        addResult('Test 5: CORS Configuration', 'success', 'CORS headers properly configured');
+                    } else {
+                        addResult('Test 5: CORS Configuration', 'error', `CORS might be blocked: ${response.status}`);
+                    }
+                } catch (error) {
+                    addResult('Test 5: CORS Configuration', 'error', error.message);
+                }
+                
+            } else {
+                addResult('Test 2: Authentication Token', 'error', 'No token - Please login first');
+            }
+            
+            addResult('All Tests Complete', 'success', 'Check results above');
+        }
+        
+        // Auto-run on load
+        setTimeout(runAllTests, 500);
+    </script>
+</body>
+</html>
