@@ -197,15 +197,19 @@ def menu_item_management(request, item_id=None):
     elif request.method == 'POST':
         data = request.data.copy()
         
+        # Convert boolean strings to actual booleans
+        is_vegetarian = str(data.get('is_vegetarian', 'false')).lower() == 'true'
+        is_available = str(data.get('is_available', 'true')).lower() == 'true'
+        
         # Create menu item
         menu_item = MenuItem.objects.create(
             restaurant=restaurant,
             name=data.get('name'),
             description=data.get('description', ''),
-            price=data.get('price'),
+            price=float(data.get('price', 0)),
             category=data.get('category', 'main_course'),
-            is_vegetarian=data.get('is_vegetarian', False),
-            is_available=data.get('is_available', True),
+            is_vegetarian=is_vegetarian,
+            is_available=is_available,
         )
         
         # Handle image upload
@@ -236,13 +240,13 @@ def menu_item_management(request, item_id=None):
         if 'description' in data:
             menu_item.description = data['description']
         if 'price' in data:
-            menu_item.price = data['price']
+            menu_item.price = float(data['price'])
         if 'category' in data:
             menu_item.category = data['category']
         if 'is_vegetarian' in data:
-            menu_item.is_vegetarian = data['is_vegetarian']
+            menu_item.is_vegetarian = str(data['is_vegetarian']).lower() == 'true'
         if 'is_available' in data:
-            menu_item.is_available = data['is_available']
+            menu_item.is_available = str(data['is_available']).lower() == 'true'
         if 'image' in request.FILES:
             menu_item.image = request.FILES['image']
         
