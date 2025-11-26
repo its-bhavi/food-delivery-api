@@ -68,10 +68,6 @@ def vendor_profile_management(request):
     """Manage vendor's restaurant profile (create/update/view)"""
     user = request.user
     
-    # Check if user is vendor
-    if not hasattr(user, 'profile') or user.profile.user_type != 'vendor':
-        return Response({'error': 'Access denied. Not a vendor.'}, status=403)
-    
     # GET: Get vendor's restaurant profile
     if request.method == 'GET':
         try:
@@ -164,15 +160,14 @@ def menu_item_management(request, item_id=None):
     """Manage vendor's menu items (create/update/view/delete)"""
     user = request.user
     
-    # Check if user is vendor
-    if not hasattr(user, 'profile') or user.profile.user_type != 'vendor':
-        return Response({'error': 'Access denied. Not a vendor.'}, status=403)
-    
-    # Get vendor's restaurant
+    # Get vendor's restaurant (check if user owns a restaurant)
     try:
         restaurant = Restaurant.objects.get(owner=user)
     except Restaurant.DoesNotExist:
-        return Response({'error': 'Please create restaurant profile first'}, status=404)
+        return Response({
+            'error': 'Please create restaurant profile first',
+            'message': 'You need to set up your restaurant before managing menu items'
+        }, status=404)
     
     # GET: Get all menu items for vendor's restaurant
     if request.method == 'GET':
