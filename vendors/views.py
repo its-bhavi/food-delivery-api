@@ -152,3 +152,118 @@ def vendor_profile_management(request):
             'message': 'Restaurant profile updated successfully',
             'restaurant': serializer.data
         })
+
+
+# ========================================
+# MENU ITEM MANAGEMENT APIs
+# ========================================
+
+@api_view(['GET', 'POST', 'PUT', 'DELETE'])
+@permission_classes([IsAuthenticated])
+def menu_item_management(request, item_id=None):
+    """Manage vendor's menu items (create/update/view/delete)"""
+    user = request.user
+    
+    # Check if user is vendor
+    if not hasattr(user, 'profile') or user.profile.user_type != 'vendor':
+        return Response({'error': 'Access denied. Not a vendor.'}, status=403)
+    
+    # Get vendor's restaurant
+    try:
+        restaurant = Restaurant.objects.get(owner=user)
+    except Restaurant.DoesNotExist:
+        return Response({'error': 'Please create restaurant profile first'}, status=404)
+    
+    # GET: Get all menu items for vendor's restaurant
+    if request.method == 'GET':
+        if item_id:
+            # Get specific menu item
+            try:
+                menu_item = MenuItem.objects.get(id=item_id, restaurant=restaurant)
+                serializer = MenuItemSerializer(menu_item)
+                return Response(serializer.data)
+            except MenuItem.DoesNotExist:
+                return Response({'error': 'Menu item not found'}, status=404)
+        else:
+            # Get all menu items
+            menu_items = MenuItem.objects.filter(restaurant=restaurant)
+            serializer = MenuItemSerializer(menu_items, many=True)
+            return Response({
+                'count': menu_items.count(),
+                'menu_items': serializer.data
+            })
+    
+    # POST: Create new menu item
+    elif request.method == 'POST':
+        data = request.data.copy()
+        
+        # Create menu item
+        menu_item = MenuItem.objects.create(
+            restaurant=restaurant,
+            name=data.get('name'),
+            description=data.get('description', ''),
+            price=data.get('price'),
+            category=data.get('category', 'main_course'),
+            is_vegetarian=data.get('is_vegetarian', False),
+            is_available=data.get('is_available', True),
+        )
+        
+        # Handle image upload
+        if 'image' in request.FILES:
+            menu_item.image = request.FILES['image']
+            menu_item.save()
+        
+        serializer = MenuItemSerializer(menu_item)
+        return Response({
+            'message': 'Menu item added successfully',
+            'menu_item': serializer.data
+        }, status=201)
+    
+    # PUT: Update menu item
+    elif request.method == 'PUT':
+        if not item_id:
+            return Response({'error': 'Item ID required'}, status=400)
+        
+        try:
+            menu_item = MenuItem.objects.get(id=item_id, restaurant=restaurant)
+        except MenuItem.DoesNotExist:
+            return Response({'error': 'Menu item not found'}, status=404)
+        
+        # Update fields
+        data = request.data
+        if 'name' in data:
+            menu_item.name = data['name']
+        if 'description' in data:
+            menu_item.description = data['description']
+        if 'price' in data:
+            menu_item.price = data['price']
+        if 'category' in data:
+            menu_item.category = data['category']
+        if 'is_vegetarian' in data:
+            menu_item.is_vegetarian = data['is_vegetarian']
+        if 'is_available' in data:
+            menu_item.is_available = data['is_available']
+        if 'image' in request.FILES:
+            menu_item.image = request.FILES['image']
+        
+        menu_item.save()
+        
+        serializer = MenuItemSerializer(menu_item)
+        return Response({
+            'message': 'Menu item updated successfully',
+            'menu_item': serializer.data
+        })
+    
+    # DELETE: Delete menu item
+    elif request.method == 'DELETE':
+        if not item_id:
+            return Response({'error': 'Item ID required'}, status=400)
+        
+        try:
+            menu_item = MenuItem.objects.get(id=item_id, restaurant=restaurant)
+            menu_item.delete()
+            return Response({
+                'message': 'Menu item deleted successfully'
+            }, status=200)
+        except MenuItem.DoesNotExist:
+            return Response({'error': 'Menu item not found'}, status=404)

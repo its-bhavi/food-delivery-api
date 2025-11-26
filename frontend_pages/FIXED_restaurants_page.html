@@ -1,0 +1,484 @@
+<div id="main-header"></div>
+<div id="restaurants-page">
+  <!-- Simple Clean Header (Zomato Style) -->
+  <div class="top-banner">
+    <div class="banner-content">
+      <h1>Restaurants near you</h1>
+      <p class="location-text">📍 Delivering to your location</p>
+    </div>
+  </div>
+  
+  <!-- Filter Bar (Swiggy Style) -->
+  <div class="filter-bar">
+    <div class="filter-container">
+      <button class="filter-chip active" data-filter="all">All Restaurants</button>
+      <button class="filter-chip" data-filter="fast">Fast Delivery</button>
+      <button class="filter-chip" data-filter="top">Top Rated</button>
+      <button class="filter-chip" data-filter="veg">Pure Veg</button>
+    </div>
+  </div>
+  
+  <!-- Restaurants List -->
+  <div id="restaurants-list">
+    <div class="loading-state">
+      <div class="loader"></div>
+      <p>Finding the best restaurants for you...</p>
+    </div>
+  </div>
+</div>
+
+<script>
+// ✅ API URL - Railway Production
+const API_BASE_URL = 'https://food-delivery-api-production-1d00.up.railway.app/api';
+
+let allRestaurants = [];
+let currentFilter = 'all';
+
+// Fetch restaurants
+async function loadRestaurants() {
+    try {
+        console.log('📡 Fetching from:', API_BASE_URL + '/vendors/restaurants/');
+        
+        const response = await fetch(API_BASE_URL + '/vendors/restaurants/', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            mode: 'cors'
+        });
+        
+        console.log('✅ Response status:', response.status);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const restaurants = await response.json();
+        console.log('🍽️ Restaurants data:', restaurants);
+        
+        allRestaurants = restaurants;
+        displayRestaurants(restaurants);
+        
+    } catch (error) {
+        console.error('❌ Fetch error:', error);
+        document.getElementById('restaurants-list').innerHTML = `
+            <div class="error-box">
+                <div class="error-icon">😕</div>
+                <h3>Oops! Something went wrong</h3>
+                <p>${error.message}</p>
+                <button onclick="loadRestaurants()" class="retry-button">Try Again</button>
+            </div>
+        `;
+    }
+}
+
+function displayRestaurants(restaurants) {
+    const container = document.getElementById('restaurants-list');
+    
+    if (!restaurants || restaurants.length === 0) {
+        container.innerHTML = `
+            <div class="empty-box">
+                <div class="empty-icon">🍽️</div>
+                <h3>No restaurants available</h3>
+                <p>We're working to bring more restaurants to your area</p>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = '<div class="restaurants-grid">';
+    
+    restaurants.forEach(restaurant => {
+        // Image with fallback - Check if Railway media URL exists
+        let imageUrl = 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&q=80';
+        
+        if (restaurant.image) {
+            // Check if image is full URL or relative path
+            if (restaurant.image.startsWith('http')) {
+                imageUrl = restaurant.image;
+            } else {
+                // Construct full Railway media URL
+                imageUrl = API_BASE_URL.replace('/api', '') + restaurant.image;
+            }
+        }
+        
+        console.log('🖼️ Image URL for', restaurant.name, ':', imageUrl);
+        
+        // Check if open
+        const isOpen = restaurant.is_open !== false;
+        
+        // Rating
+        const rating = restaurant.rating ? parseFloat(restaurant.rating).toFixed(1) : '4.0';
+        
+        html += `
+            <div class="restaurant-item" onclick="window.location.href='/restaurant-detail/?id=${restaurant.id}'">
+                <div class="rest-image-box">
+                    <img src="${imageUrl}" 
+                         alt="${restaurant.name}"
+                         onerror="this.src='https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&q=80'; console.error('Image failed:', '${imageUrl}');">
+                    ${!isOpen ? '<div class="closed-overlay"><span>Currently Closed</span></div>' : ''}
+                </div>
+                
+                <div class="rest-info">
+                    <div class="rest-header">
+                        <h3 class="rest-name">${restaurant.name}</h3>
+                        <div class="rest-rating">
+                            <span class="rating-star">⭐</span>
+                            <span class="rating-num">${rating}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="rest-details">
+                        <span class="detail-item">🍕 Multi-Cuisine</span>
+                        <span class="detail-dot">•</span>
+                        <span class="detail-item">30-40 mins</span>
+                    </div>
+                    
+                    <div class="rest-meta">
+                        <span class="meta-time">🕒 ${restaurant.opening_time ? restaurant.opening_time.substring(0,5) : '09:00'} - ${restaurant.closing_time ? restaurant.closing_time.substring(0,5) : '22:00'}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+// Filter functionality
+document.querySelectorAll('.filter-chip').forEach(btn => {
+    btn.addEventListener('click', function() {
+        // Remove active from all
+        document.querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active'));
+        
+        // Add active to clicked
+        this.classList.add('active');
+        
+        const filter = this.getAttribute('data-filter');
+        currentFilter = filter;
+        
+        // Apply filter
+        let filtered = allRestaurants;
+        
+        if (filter === 'top') {
+            filtered = allRestaurants.filter(r => parseFloat(r.rating || 4.0) >= 4.0);
+        } else if (filter === 'fast') {
+            filtered = [...allRestaurants].sort((a, b) => (a.rating || 4.0) - (b.rating || 4.0)).reverse();
+        } else if (filter === 'veg') {
+            filtered = allRestaurants.filter(r => r.name.toLowerCase().includes('veg'));
+        }
+        
+        displayRestaurants(filtered);
+    });
+});
+
+// Load on page ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', loadRestaurants);
+} else {
+    loadRestaurants();
+}
+</script>
+
+<style>
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', sans-serif;
+    background: #f8f8f8;
+}
+
+#restaurants-page {
+    max-width: 1200px;
+    margin: 0 auto;
+    background: white;
+}
+
+/* Top Banner (Minimal Zomato Style) */
+.top-banner {
+    background: white;
+    padding: 30px 20px 20px;
+    border-bottom: 1px solid #e8e8e8;
+}
+
+.banner-content h1 {
+    font-size: 32px;
+    font-weight: 600;
+    color: #1c1c1c;
+    margin: 0 0 8px;
+}
+
+.location-text {
+    color: #686b78;
+    font-size: 15px;
+    font-weight: 400;
+}
+
+/* Filter Bar (Swiggy Style) */
+.filter-bar {
+    background: white;
+    padding: 20px;
+    border-bottom: 1px solid #e8e8e8;
+    overflow-x: auto;
+}
+
+.filter-container {
+    display: flex;
+    gap: 12px;
+    white-space: nowrap;
+}
+
+.filter-chip {
+    padding: 10px 18px;
+    border: 1px solid #d4d5d9;
+    background: white;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #3d4152;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.filter-chip:hover {
+    border-color: #fc8019;
+    color: #fc8019;
+}
+
+.filter-chip.active {
+    background: #fc8019;
+    color: white;
+    border-color: #fc8019;
+}
+
+/* Loading State */
+.loading-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 80px 20px;
+}
+
+.loader {
+    width: 50px;
+    height: 50px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #fc8019;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.loading-state p {
+    margin-top: 20px;
+    color: #7e808c;
+    font-size: 16px;
+}
+
+/* Error/Empty States */
+.error-box, .empty-box {
+    text-align: center;
+    padding: 80px 20px;
+}
+
+.error-icon, .empty-icon {
+    font-size: 60px;
+    margin-bottom: 20px;
+}
+
+.error-box h3, .empty-box h3 {
+    font-size: 22px;
+    color: #282c3f;
+    margin: 0 0 10px;
+}
+
+.error-box p, .empty-box p {
+    color: #7e808c;
+    font-size: 15px;
+    margin: 0 0 25px;
+}
+
+.retry-button {
+    padding: 12px 30px;
+    background: #fc8019;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.retry-button:hover {
+    background: #e67316;
+}
+
+/* Restaurants Grid (Swiggy/Zomato Layout) */
+.restaurants-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 32px;
+    padding: 30px 20px;
+}
+
+/* Restaurant Item (Clean Card) */
+.restaurant-item {
+    background: white;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.restaurant-item:hover {
+    transform: scale(1.02);
+}
+
+/* Restaurant Image */
+.rest-image-box {
+    position: relative;
+    width: 100%;
+    height: 180px;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.rest-image-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.closed-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.closed-overlay span {
+    color: white;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+/* Restaurant Info */
+.rest-info {
+    padding: 12px 0;
+}
+
+.rest-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+}
+
+.rest-name {
+    font-size: 18px;
+    font-weight: 600;
+    color: #282c3f;
+    margin: 0;
+    flex: 1;
+    line-height: 1.3;
+}
+
+.rest-rating {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: #48c479;
+    padding: 4px 8px;
+    border-radius: 6px;
+    margin-left: 10px;
+}
+
+.rating-star {
+    font-size: 12px;
+}
+
+.rating-num {
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.rest-details {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.detail-item {
+    color: #7e808c;
+    font-size: 14px;
+}
+
+.detail-dot {
+    color: #d4d5d9;
+}
+
+.rest-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.meta-time {
+    color: #7e808c;
+    font-size: 13px;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .top-banner {
+        padding: 20px 16px 16px;
+    }
+    
+    .banner-content h1 {
+        font-size: 26px;
+    }
+    
+    .filter-bar {
+        padding: 16px;
+    }
+    
+    .filter-chip {
+        padding: 8px 14px;
+        font-size: 13px;
+    }
+    
+    .restaurants-grid {
+        grid-template-columns: 1fr;
+        gap: 24px;
+        padding: 20px 16px;
+    }
+    
+    .rest-image-box {
+        height: 160px;
+    }
+}
+
+@media (max-width: 480px) {
+    .banner-content h1 {
+        font-size: 22px;
+    }
+    
+    .restaurants-grid {
+        gap: 20px;
+    }
+}
+</style>

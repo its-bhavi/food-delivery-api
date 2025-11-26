@@ -176,13 +176,17 @@ if cors_env:
     CORS_ALLOWED_ORIGINS = [origin.strip() for origin in cors_env.split(',')]
     CORS_ALLOW_ALL_ORIGINS = False
 else:
-    # Development - Allow all origins
+    # Development - Allow all origins for now (Railway deployment)
     CORS_ALLOW_ALL_ORIGINS = True
     CORS_ALLOWED_ORIGINS = [
         "https://lightskyblue-ostrich-354680.hostingersite.com",
+        "http://lightskyblue-ostrich-354680.hostingersite.com",
         "http://localhost:3000",
         "http://127.0.0.1:8000",
     ]
+
+# IMPORTANT: Allow all origins temporarily for debugging
+CORS_ALLOW_ALL_ORIGINS = True
 
 CORS_ALLOW_METHODS = ['DELETE', 'GET', 'OPTIONS', 'PATCH', 'POST', 'PUT']
 

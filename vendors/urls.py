@@ -4,7 +4,8 @@ from .views import (
     RestaurantDetailView,
     RestaurantMenuView,
     RestaurantSearchView,
-    vendor_profile_management
+    vendor_profile_management,
+    menu_item_management
 )
 
 urlpatterns = [
@@ -15,4 +16,8 @@ urlpatterns = [
     
     # Vendor Profile Management
     path('profile/', vendor_profile_management, name='vendor-profile'),
+    
+    # Menu Item Management
+    path('menu-items/', menu_item_management, name='menu-items-list'),
+    path('menu-items/<int:item_id>/', menu_item_management, name='menu-item-detail'),
 ]
