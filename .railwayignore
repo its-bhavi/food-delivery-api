@@ -1,0 +1,9 @@
+# Don't upload local dev files to Railway
+venv/
+*.pyc
+__pycache__/
+db.sqlite3
+.env
+.vscode/
+*.log
+database_backup/

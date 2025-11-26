@@ -26,6 +26,6 @@ urlpatterns = [
     path('api/payments/razorpay-verify/', RazorpayPaymentVerifyAPIView.as_view(), name='razorpay-verify'),
 ]
 
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# Media files - Serve in both DEBUG and production (Railway needs this)
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
