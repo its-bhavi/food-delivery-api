@@ -30,9 +30,30 @@
 <script>
 // ✅ API URL - Railway Production
 const API_BASE_URL = 'https://food-delivery-api-production-1d00.up.railway.app/api';
+const MEDIA_BASE_URL = 'https://food-delivery-api-production-1d00.up.railway.app';
 
 let allRestaurants = [];
 let currentFilter = 'all';
+
+// Helper function to get proper image URL
+function getImageUrl(imagePath) {
+    if (!imagePath) {
+        return null; // No image available
+    }
+    
+    // If already a full URL (http/https), return as is
+    if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+        return imagePath;
+    }
+    
+    // If starts with /media/, construct full URL
+    if (imagePath.startsWith('/media/')) {
+        return MEDIA_BASE_URL + imagePath;
+    }
+    
+    // Otherwise, assume it's a relative path and construct URL
+    return MEDIA_BASE_URL + '/media/' + imagePath;
+}
 
 // Fetch restaurants
 async function loadRestaurants() {
@@ -89,20 +110,12 @@ function displayRestaurants(restaurants) {
     let html = '<div class="restaurants-grid">';
     
     restaurants.forEach(restaurant => {
-        // Image with fallback - Check if Railway media URL exists
-        let imageUrl = 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&q=80';
+        // Get proper image URL from API response
+        const imageUrl = getImageUrl(restaurant.image);
         
-        if (restaurant.image) {
-            // Check if image is full URL or relative path
-            if (restaurant.image.startsWith('http')) {
-                imageUrl = restaurant.image;
-            } else {
-                // Construct full Railway media URL
-                imageUrl = API_BASE_URL.replace('/api', '') + restaurant.image;
-            }
-        }
-        
-        console.log('🖼️ Image URL for', restaurant.name, ':', imageUrl);
+        console.log('🖼️ Restaurant:', restaurant.name);
+        console.log('   API image field:', restaurant.image);
+        console.log('   Final URL:', imageUrl);
         
         // Check if open
         const isOpen = restaurant.is_open !== false;
@@ -113,9 +126,16 @@ function displayRestaurants(restaurants) {
         html += `
             <div class="restaurant-item" onclick="window.location.href='/restaurant-detail/?id=${restaurant.id}'">
                 <div class="rest-image-box">
-                    <img src="${imageUrl}" 
-                         alt="${restaurant.name}"
-                         onerror="this.src='https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&q=80'; console.error('Image failed:', '${imageUrl}');">
+                    ${imageUrl ? `
+                        <img src="${imageUrl}" 
+                             alt="${restaurant.name}"
+                             onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'no-image\\'>🍽️<br><span>No Image</span></div>';">
+                    ` : `
+                        <div class="no-image">
+                            <div class="no-image-icon">🍽️</div>
+                            <span>No Image Available</span>
+                        </div>
+                    `}
                     ${!isOpen ? '<div class="closed-overlay"><span>Currently Closed</span></div>' : ''}
                 </div>
                 
@@ -348,12 +368,37 @@ body {
     height: 180px;
     border-radius: 12px;
     overflow: hidden;
+    background: #f0f0f0;
 }
 
 .rest-image-box img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+}
+
+/* No Image Placeholder */
+.no-image {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
+    color: #999;
+}
+
+.no-image-icon {
+    font-size: 48px;
+    margin-bottom: 8px;
+    opacity: 0.5;
+}
+
+.no-image span {
+    font-size: 13px;
+    font-weight: 500;
+    color: #999;
 }
 
 .closed-overlay {

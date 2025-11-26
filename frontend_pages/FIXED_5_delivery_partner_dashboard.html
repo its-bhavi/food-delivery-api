@@ -463,6 +463,17 @@
         script.src = 'https://maps.googleapis.com/maps/api/js?key=AIzaSyAMeehYlcfmKARKqpP--BVZj7C6GZCUqIQ&callback=initializeApp';
         script.async = true;
         script.defer = true;
+        
+        // Handle when Maps API is blocked by ad blocker
+        script.onerror = function() {
+            console.warn('⚠️ Google Maps blocked by ad blocker or privacy extension');
+            console.log('ℹ️ Dashboard will work without maps. To enable maps, disable ad blocker for this site.');
+            // Call initializeApp anyway to load orders
+            if (typeof initializeApp === 'function') {
+                initializeApp();
+            }
+        };
+        
         document.head.appendChild(script);
 
         window.addEventListener('beforeunload', () => {

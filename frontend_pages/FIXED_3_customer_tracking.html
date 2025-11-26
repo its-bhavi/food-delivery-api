@@ -286,12 +286,22 @@
             const token = getToken();
             
             try {
+                console.log(`📡 Fetching tracking data for order ${orderId}...`);
+                console.log('🔑 Token:', token ? token.substring(0, 20) + '...' : 'No token');
+                
                 const response = await fetch(`${API_BASE}/orders/${orderId}/tracking/`, {
                     headers: token ? { 'Authorization': `Bearer ${token}` } : {}
                 });
 
+                console.log('✅ Response status:', response.status);
+
                 if (!response.ok) {
-                    throw new Error('Order not found');
+                    if (response.status === 404) {
+                        throw new Error('Order not found. Please check the order ID.');
+                    } else if (response.status === 401) {
+                        throw new Error('Please login to track your order.');
+                    }
+                    throw new Error(`Error: ${response.status}`);
                 }
 
                 const data = await response.json();
@@ -327,7 +337,17 @@
 
             } catch (error) {
                 console.error('❌ Error:', error);
-                alert('Failed to load order tracking: ' + error.message);
+                document.getElementById('mainContent').innerHTML = `
+                    <div style="text-align: center; padding: 80px; background: white; border-radius: 15px; margin: 20px;">
+                        <div style="font-size: 60px; margin-bottom: 20px;">😕</div>
+                        <h2 style="color: #282c3f; margin-bottom: 15px;">Unable to Load Tracking</h2>
+                        <p style="color: #7e808c; margin-bottom: 25px;">${error.message}</p>
+                        <button onclick="location.reload()" 
+                                style="padding: 12px 24px; background: #fc8019; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                            Retry
+                        </button>
+                    </div>
+                `;
             }
         }
 
@@ -343,8 +363,21 @@
         window.initializeApp = function() {
             orderId = getOrderIdFromURL();
             
+            console.log('🔍 Order ID from URL:', orderId);
+            
             if (!orderId) {
-                alert('Order ID not provided in URL');
+                document.getElementById('loadingScreen').innerHTML = `
+                    <div style="text-align: center; padding: 40px;">
+                        <h2 style="color: white; margin-bottom: 20px;">⚠️ No Order ID</h2>
+                        <p style="color: rgba(255,255,255,0.8); margin-bottom: 20px;">
+                            Order ID not found in URL. Please use the tracking link from your order confirmation.
+                        </p>
+                        <button onclick="window.location.href='/my-orders/'" 
+                                style="padding: 12px 24px; background: white; color: #fc8019; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                            Go to My Orders
+                        </button>
+                    </div>
+                `;
                 return;
             }
 

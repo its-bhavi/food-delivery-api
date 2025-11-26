@@ -119,6 +119,7 @@
 
     <script>
         const API_BASE = 'https://food-delivery-api-production-1d00.up.railway.app/api';
+        const MEDIA_BASE_URL = 'https://food-delivery-api-production-1d00.up.railway.app';
         let map, marker;
         let currentLat = 28.7041;
         let currentLng = 77.1025;
@@ -128,6 +129,26 @@
             return localStorage.getItem('access_token') || 
                    localStorage.getItem('authToken') || 
                    sessionStorage.getItem('authToken');
+        }
+
+        // Helper function to get proper image URL
+        function getImageUrl(imagePath) {
+            if (!imagePath) {
+                return null;
+            }
+            
+            // If already a full URL (http/https), return as is
+            if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+                return imagePath;
+            }
+            
+            // If starts with /media/, construct full URL
+            if (imagePath.startsWith('/media/')) {
+                return MEDIA_BASE_URL + imagePath;
+            }
+            
+            // Otherwise, assume it's a relative path
+            return MEDIA_BASE_URL + '/media/' + imagePath;
         }
 
         function showAlert(message, type) {
@@ -209,15 +230,23 @@
         async function loadProfile() {
             const token = getToken();
             if (!token) {
-                showAlert('Please login first', 'error');
+                showAlert('⚠️ Please login first', 'error');
                 setTimeout(() => window.location.href = '/login/', 2000);
                 return;
             }
 
             try {
+                console.log('📡 Loading restaurant profile...');
+                console.log('🔑 Token:', token.substring(0, 20) + '...');
+                
                 const response = await fetch(`${API_BASE}/vendors/profile/`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
+                    headers: { 
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
                 });
+                
+                console.log('✅ Response status:', response.status);
 
                 if (response.ok) {
                     existingProfile = await response.json();
@@ -248,22 +277,36 @@
                     }
                     
                     if (existingProfile.image) {
-                        const preview = document.getElementById('imagePreview');
-                        preview.src = existingProfile.image;
-                        preview.style.display = 'block';
+                        const imageUrl = getImageUrl(existingProfile.image);
+                        if (imageUrl) {
+                            const preview = document.getElementById('imagePreview');
+                            preview.src = imageUrl;
+                            preview.style.display = 'block';
+                            
+                            console.log('🖼️ Restaurant image loaded:', imageUrl);
+                        }
                     }
                     
                     document.getElementById('submitBtn').textContent = '✏️ Update Restaurant Profile';
                 } else if (response.status === 404) {
+                    console.log('ℹ️ No existing profile found - new registration');
                     document.getElementById('profileStatus').style.display = 'block';
                     document.getElementById('statusTitle').textContent = '📝 New Registration';
                     document.getElementById('statusMessage').textContent = 'Create your restaurant profile to start receiving orders.';
                     document.getElementById('submitBtn').textContent = '➕ Create Restaurant Profile';
+                } else if (response.status === 401) {
+                    console.error('❌ 401 Unauthorized - Token invalid or expired');
+                    const errorData = await response.json();
+                    console.error('Error details:', errorData);
+                    showAlert('⚠️ Session expired. Please login again.', 'error');
+                    setTimeout(() => window.location.href = '/login/', 2000);
                 } else {
-                    showAlert('Error loading profile', 'error');
+                    const errorData = await response.json();
+                    console.error('❌ Error loading profile:', response.status, errorData);
+                    showAlert('Error loading profile: ' + (errorData.detail || response.status), 'error');
                 }
             } catch (error) {
-                console.error('Error:', error);
+                console.error('❌ Network error:', error);
                 showAlert('Failed to load profile: ' + error.message, 'error');
             }
         }

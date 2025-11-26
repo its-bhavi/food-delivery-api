@@ -314,35 +314,57 @@
         }
 
         function initModalMap(address) {
-            if (!window.google) {
-                document.getElementById('mapContainer').innerHTML = '<div>Maps API loading...</div>';
+            if (!window.google || !window.google.maps) {
+                document.getElementById('mapContainer').innerHTML = `
+                    <div style="padding: 40px; text-align: center; color: #666;">
+                        <div style="font-size: 48px; margin-bottom: 15px;">📍</div>
+                        <p style="margin-bottom: 10px; font-weight: 600;">Map Not Available</p>
+                        <p style="font-size: 13px; color: #999;">
+                            Google Maps blocked by ad blocker.<br>
+                            Disable ad blocker to view map.
+                        </p>
+                        <p style="margin-top: 15px; padding: 15px; background: #f0f0f0; border-radius: 8px; font-size: 13px;">
+                            <strong>Delivery Address:</strong><br>${address || 'Not provided'}
+                        </p>
+                    </div>
+                `;
                 return;
             }
 
             const defaultLocation = { lat: 28.7041, lng: 77.1025 };
             
-            modalMap = new google.maps.Map(document.getElementById('mapContainer'), {
-                center: defaultLocation,
-                zoom: 13
-            });
-
-            modalMarker = new google.maps.Marker({
-                position: defaultLocation,
-                map: modalMap,
-                title: 'Delivery Location'
-            });
-
-            // Geocode address
-            if (address && address.trim()) {
-                const geocoder = new google.maps.Geocoder();
-                geocoder.geocode({ address: address + ', India' }, (results, status) => {
-                    if (status === 'OK' && results[0]) {
-                        const location = results[0].geometry.location;
-                        modalMap.setCenter(location);
-                        modalMarker.setPosition(location);
-                        modalMap.setZoom(15);
-                    }
+            try {
+                modalMap = new google.maps.Map(document.getElementById('mapContainer'), {
+                    center: defaultLocation,
+                    zoom: 13
                 });
+
+                modalMarker = new google.maps.Marker({
+                    position: defaultLocation,
+                    map: modalMap,
+                    title: 'Delivery Location'
+                });
+
+                // Geocode address
+                if (address && address.trim()) {
+                    const geocoder = new google.maps.Geocoder();
+                    geocoder.geocode({ address: address + ', India' }, (results, status) => {
+                        if (status === 'OK' && results[0]) {
+                            const location = results[0].geometry.location;
+                            modalMap.setCenter(location);
+                            modalMarker.setPosition(location);
+                            modalMap.setZoom(15);
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error('❌ Map initialization error:', error);
+                document.getElementById('mapContainer').innerHTML = `
+                    <div style="padding: 40px; text-align: center; color: #666;">
+                        <p>📍 Map failed to load</p>
+                        <p style="margin-top: 10px; font-size: 13px;">${address || ''}</p>
+                    </div>
+                `;
             }
         }
 
@@ -356,6 +378,17 @@
         script.src = 'https://maps.googleapis.com/maps/api/js?key=AIzaSyAMeehYlcfmKARKqpP--BVZj7C6GZCUqIQ&callback=initializeApp';
         script.async = true;
         script.defer = true;
+        
+        // Handle when Maps API is blocked by ad blocker
+        script.onerror = function() {
+            console.warn('⚠️ Google Maps blocked by ad blocker or privacy extension');
+            console.log('ℹ️ Dashboard will work without maps. To enable maps, disable ad blocker for this site.');
+            // Call initializeApp anyway to load orders
+            if (typeof initializeApp === 'function') {
+                initializeApp();
+            }
+        };
+        
         document.head.appendChild(script);
     </script>
 </body>
