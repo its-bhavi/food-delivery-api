@@ -64,10 +64,6 @@ def delivery_partner_profile_management(request):
     """Manage delivery partner profile (create/update/view)"""
     user = request.user
     
-    # Check if user is delivery partner
-    if not hasattr(user, 'profile') or user.profile.user_type != 'delivery':
-        return Response({'error': 'Access denied. Not a delivery partner.'}, status=403)
-    
     # GET: Get delivery partner profile
     if request.method == 'GET':
         try:
