@@ -126,15 +126,14 @@ def vendor_orders(request):
     """Get all orders for vendor's restaurant"""
     user = request.user
     
-    # Check if user is vendor - ✅ Fixed: Check UserProfile
-    if not hasattr(user, 'profile') or user.profile.user_type != 'vendor':
-        return Response({'error': 'Access denied. Not a vendor.'}, status=403)
-    
-    # Get vendor's restaurant
+    # Get vendor's restaurant (ownership proves vendor status)
     try:
         restaurant = Restaurant.objects.get(owner=user)
     except Restaurant.DoesNotExist:
-        return Response({'error': 'No restaurant found for this vendor.'}, status=404)
+        return Response({
+            'error': 'No restaurant found for this user.',
+            'message': 'Please create a restaurant profile first.'
+        }, status=404)
     
     # Get all orders for this restaurant
     orders = Order.objects.filter(restaurant=restaurant).select_related(
@@ -154,14 +153,19 @@ def delivery_orders(request):
     """Get available and assigned orders for delivery partner"""
     user = request.user
     
-    # Check if user is delivery partner - ✅ Fixed: Check UserProfile
-    if not hasattr(user, 'profile') or user.profile.user_type != 'delivery':
-        return Response({'error': 'Access denied. Not a delivery partner.'}, status=403)
+    # Check if delivery partner profile exists
+    try:
+        from delivery.models import DeliveryPartner
+        delivery_partner = DeliveryPartner.objects.get(user=user)
+    except DeliveryPartner.DoesNotExist:
+        return Response({
+            'error': 'No delivery partner profile found.',
+            'message': 'Please create a delivery partner profile first.'
+        }, status=404)
     
     # Get orders:
     # 1. Ready for pickup (status='ready')
-    # 2. Currently delivering (status='picked') - ✅ Fixed status name
-    # Note: delivery_partner field will be added to Order model
+    # 2. Currently delivering (status='picked')
     orders = Order.objects.filter(
         Q(status='ready') | 
         Q(status='picked')
