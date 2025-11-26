@@ -11,7 +11,7 @@ USER_TYPE = (
 
 # User Profile Model
 class UserProfile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    user = models.OneToOneField(User, on_delete=models.PROTECT, related_name='profile')
     user_type = models.CharField(max_length=20, choices=USER_TYPE, default='customer')
     phone = models.CharField(max_length=15, unique=True)
     profile_picture = models.ImageField(upload_to='profiles/', null=True, blank=True)

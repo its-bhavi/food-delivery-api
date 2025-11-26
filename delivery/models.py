@@ -12,7 +12,7 @@ PARTNER_STATUS = (
 
 # Delivery Partner Model
 class DeliveryPartner(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='delivery_profile')
+    user = models.OneToOneField(User, on_delete=models.PROTECT, related_name='delivery_profile')
     phone = models.CharField(max_length=15)
     vehicle_number = models.CharField(max_length=20)
     vehicle_type = models.CharField(max_length=50)  # Bike, Scooter, Bicycle

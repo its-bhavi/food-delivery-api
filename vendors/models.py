@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 # Restaurant Model
 class Restaurant(models.Model):
     name = models.CharField(max_length=200, verbose_name="Restaurant Name")
-    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='restaurants')
+    owner = models.ForeignKey(User, on_delete=models.PROTECT, related_name='restaurants')
     phone = models.CharField(max_length=15)
     email = models.EmailField()
     address = models.TextField()
