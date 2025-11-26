@@ -90,18 +90,28 @@ WSGI_APPLICATION = 'food_delivery_api.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-# Database Configuration
+# Database Configuration for Railway PostgreSQL
 DATABASE_URL = os.getenv('DATABASE_URL')
 
 if DATABASE_URL:
-    # Production - Render PostgreSQL
+    # Production - Railway/Render PostgreSQL
+    # Parse DATABASE_URL and configure with connection pooling
     DATABASES = {
         'default': dj_database_url.config(
             default=DATABASE_URL,
-            conn_max_age=600,
-            conn_health_checks=True,
+            conn_max_age=600,  # Keep connections alive for 10 minutes
+            conn_health_checks=True,  # Check connection health before using
+            ssl_require=False,  # Railway doesn't require SSL
         )
     }
+    
+    # Railway PostgreSQL specific settings
+    DATABASES['default']['OPTIONS'] = {
+        'connect_timeout': 10,  # Timeout after 10 seconds
+    }
+    
+    # Ensure proper connection handling
+    DATABASES['default']['ATOMIC_REQUESTS'] = True  # Wrap each request in a transaction
 else:
     # Development - Local SQLite
     DATABASES = {
