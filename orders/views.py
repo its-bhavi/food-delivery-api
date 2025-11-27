@@ -180,7 +180,7 @@ def delivery_orders(request):
 # ========================================
 # UPDATE ORDER STATUS API
 # ========================================
-@api_view(['PATCH'])
+@api_view(['PATCH', 'POST'])
 @permission_classes([IsAuthenticated])
 def update_order_status(request, order_id):
     """Update order status (vendor or delivery partner)"""

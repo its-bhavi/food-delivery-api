@@ -7,6 +7,7 @@ from vendors.serializers import MenuItemSerializer
 class OrderItemSerializer(serializers.ModelSerializer):
     menu_item = MenuItemSerializer(read_only=True)
     menu_item_id = serializers.IntegerField(write_only=True)
+    menu_item_name = serializers.CharField(source='menu_item.name', read_only=True)
     
     class Meta:
         model = OrderItem
@@ -14,6 +15,7 @@ class OrderItemSerializer(serializers.ModelSerializer):
             'id',
             'menu_item',
             'menu_item_id',
+            'menu_item_name',
             'quantity',
             'price',
             'subtotal',

@@ -826,6 +826,8 @@
             
             ordersList.innerHTML = orders.map(order => {
                 const statusClass = `status-${order.status.toLowerCase().replace(' ', '-')}`;
+                const statusLower = order.status.toLowerCase();
+                
                 return `
                     <div class="order-card">
                         <div class="order-header">
@@ -841,22 +843,22 @@
                         <div class="order-items">
                             ${order.items.map(item => `
                                 <div class="order-item">
-                                    🍽️ ${item.menu_item_name} × ${item.quantity} - ₹${parseFloat(item.price).toFixed(2)}
+                                    🍽️ ${item.menu_item_name || 'Menu Item'} × ${item.quantity} - ₹${parseFloat(item.price).toFixed(2)}
                                 </div>
                             `).join('')}
                         </div>
                         
                         <div class="order-total">Total: ₹${parseFloat(order.total_amount).toFixed(2)}</div>
                         
-                        ${order.status === 'Pending' ? `
+                        ${statusLower === 'pending' ? `
                             <div class="order-actions">
-                                <button class="btn-accept" onclick="updateOrderStatus(${order.id}, 'Confirmed')">
+                                <button class="btn-accept" onclick="updateOrderStatus(${order.id}, 'confirmed')">
                                     ✅ Accept Order
                                 </button>
                             </div>
-                        ` : order.status === 'Confirmed' ? `
+                        ` : statusLower === 'confirmed' ? `
                             <div class="order-actions">
-                                <button class="btn-ready" onclick="updateOrderStatus(${order.id}, 'Ready for Pickup')">
+                                <button class="btn-ready" onclick="updateOrderStatus(${order.id}, 'ready')">
                                     🍕 Mark as Ready
                                 </button>
                             </div>
