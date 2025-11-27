@@ -873,7 +873,7 @@
             
             try {
                 const response = await fetch(`${API_BASE_URL}/orders/${orderId}/update-status/`, {
-                    method: 'POST',
+                    method: 'PATCH',
                     headers: {
                         'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json'
@@ -881,14 +881,17 @@
                     body: JSON.stringify({ status: newStatus })
                 });
                 
-                if (!response.ok) throw new Error('Failed to update status');
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Failed to update status');
+                }
                 
                 showAlert('orders-alert', `Order status updated to ${newStatus}!`, 'success');
                 loadOrders(); // Reload orders
                 
             } catch (error) {
                 console.error('Error updating status:', error);
-                showAlert('orders-alert', 'Failed to update order status.', 'error');
+                showAlert('orders-alert', error.message || 'Failed to update order status.', 'error');
             }
         }
     </script>
