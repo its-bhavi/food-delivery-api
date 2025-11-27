@@ -362,6 +362,88 @@
             color: #721c24;
             border: 1px solid #f5c6cb;
         }
+        
+        /* Orders List */
+        .order-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        .order-number {
+            font-size: 18px;
+            font-weight: 700;
+            color: #282c3f;
+        }
+        .order-status {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .status-confirmed {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+        .status-preparing {
+            background: #cce5ff;
+            color: #004085;
+        }
+        .status-ready {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status-delivered {
+            background: #d4edda;
+            color: #155724;
+        }
+        .order-items {
+            margin-bottom: 15px;
+        }
+        .order-item {
+            padding: 8px 0;
+            color: #7e808c;
+        }
+        .order-total {
+            font-size: 20px;
+            font-weight: 700;
+            color: #27ae60;
+            text-align: right;
+        }
+        .order-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .btn-accept, .btn-ready {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 14px;
+            color: white;
+        }
+        .btn-accept {
+            background: #27ae60;
+        }
+        .btn-ready {
+            background: #3498db;
+        }
     </style>
 </head>
 <body>
@@ -398,9 +480,10 @@
     <div id="orders-tab" class="tab-content">
         <div class="container">
             <h2 style="margin-bottom: 20px;">📦 Recent Orders</h2>
-            <p style="padding: 40px; text-align: center; background: white; border-radius: 12px;">
-                Your existing order management code can be placed here. See FIXED_4_restaurant_dashboard.html for the orders code.
-            </p>
+            <div id="orders-alert"></div>
+            <div id="orders-list">
+                <!-- Orders will load here -->
+            </div>
         </div>
     </div>
     
@@ -479,6 +562,11 @@
                 this.classList.add('active');
                 const tabName = this.getAttribute('data-tab');
                 document.getElementById(`${tabName}-tab`).classList.add('active');
+                
+                // Load orders when Orders tab is clicked
+                if (tabName === 'orders') {
+                    loadOrders();
+                }
             });
         });
         
@@ -501,7 +589,8 @@
                 
                 if (!response.ok) throw new Error('Failed to load menu');
                 
-                const items = await response.json();
+                const data = await response.json();
+                const items = data.menu_items || data; // Handle both {menu_items: [...]} and direct array
                 displayMenuItems(items);
                 
             } catch (error) {
@@ -690,6 +779,115 @@
                 </div>
             `;
             setTimeout(() => alertDiv.innerHTML = '', 5000);
+        }
+        
+        // ========================================
+        // ORDERS MANAGEMENT
+        // ========================================
+        
+        async function loadOrders() {
+            const token = localStorage.getItem('access_token');
+            if (!token) {
+                window.location.href = '/login/';
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/orders/vendor-orders/`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (!response.ok) throw new Error('Failed to load orders');
+                
+                const data = await response.json();
+                displayOrders(data.orders || data);
+                
+            } catch (error) {
+                console.error('Error loading orders:', error);
+                showAlert('orders-alert', 'Failed to load orders. Please try again.', 'error');
+            }
+        }
+        
+        function displayOrders(orders) {
+            const ordersList = document.getElementById('orders-list');
+            
+            if (!orders || orders.length === 0) {
+                ordersList.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📦</div>
+                        <h3>No Orders Yet</h3>
+                        <p>Orders from customers will appear here.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            ordersList.innerHTML = orders.map(order => {
+                const statusClass = `status-${order.status.toLowerCase().replace(' ', '-')}`;
+                return `
+                    <div class="order-card">
+                        <div class="order-header">
+                            <div>
+                                <div class="order-number">📋 ${order.order_number}</div>
+                                <div style="font-size: 13px; color: #7e808c; margin-top: 5px;">
+                                    ${new Date(order.created_at).toLocaleString('en-IN')}
+                                </div>
+                            </div>
+                            <span class="order-status ${statusClass}">${order.status}</span>
+                        </div>
+                        
+                        <div class="order-items">
+                            ${order.items.map(item => `
+                                <div class="order-item">
+                                    🍽️ ${item.menu_item_name} × ${item.quantity} - ₹${parseFloat(item.price).toFixed(2)}
+                                </div>
+                            `).join('')}
+                        </div>
+                        
+                        <div class="order-total">Total: ₹${parseFloat(order.total_amount).toFixed(2)}</div>
+                        
+                        ${order.status === 'Pending' ? `
+                            <div class="order-actions">
+                                <button class="btn-accept" onclick="updateOrderStatus(${order.id}, 'Confirmed')">
+                                    ✅ Accept Order
+                                </button>
+                            </div>
+                        ` : order.status === 'Confirmed' ? `
+                            <div class="order-actions">
+                                <button class="btn-ready" onclick="updateOrderStatus(${order.id}, 'Ready for Pickup')">
+                                    🍕 Mark as Ready
+                                </button>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        async function updateOrderStatus(orderId, newStatus) {
+            const token = localStorage.getItem('access_token');
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/orders/${orderId}/update-status/`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ status: newStatus })
+                });
+                
+                if (!response.ok) throw new Error('Failed to update status');
+                
+                showAlert('orders-alert', `Order status updated to ${newStatus}!`, 'success');
+                loadOrders(); // Reload orders
+                
+            } catch (error) {
+                console.error('Error updating status:', error);
+                showAlert('orders-alert', 'Failed to update order status.', 'error');
+            }
         }
     </script>
 </body>
