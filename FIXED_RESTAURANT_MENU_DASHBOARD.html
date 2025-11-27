@@ -493,7 +493,7 @@
             }
             
             try {
-                const response = await fetch(`${API_BASE_URL}/vendors/menu/`, {
+                const response = await fetch(`${API_BASE_URL}/vendors/menu-items/`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
@@ -574,7 +574,7 @@
             const token = localStorage.getItem('access_token');
             
             try {
-                const response = await fetch(`${API_BASE_URL}/vendors/menu/${id}/`, {
+                const response = await fetch(`${API_BASE_URL}/vendors/menu-items/${id}/`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
@@ -609,7 +609,7 @@
             const token = localStorage.getItem('access_token');
             
             try {
-                const response = await fetch(`${API_BASE_URL}/vendors/menu/${id}/`, {
+                const response = await fetch(`${API_BASE_URL}/vendors/menu-items/${id}/`, {
                     method: 'DELETE',
                     headers: {
                         'Authorization': `Bearer ${token}`
@@ -650,8 +650,8 @@
             
             try {
                 const url = currentEditingId 
-                    ? `${API_BASE_URL}/vendors/menu/${currentEditingId}/`
-                    : `${API_BASE_URL}/vendors/menu/`;
+                    ? `${API_BASE_URL}/vendors/menu-items/${currentEditingId}/`
+                    : `${API_BASE_URL}/vendors/menu-items/`;
                 
                 const method = currentEditingId ? 'PUT' : 'POST';
                 
