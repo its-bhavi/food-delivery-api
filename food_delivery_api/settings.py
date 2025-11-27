@@ -90,11 +90,11 @@ WSGI_APPLICATION = 'food_delivery_api.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-# Database Configuration for Railway PostgreSQL
+# Database Configuration - ALWAYS use PostgreSQL on Railway
 DATABASE_URL = os.getenv('DATABASE_URL')
 
 if DATABASE_URL:
-    # Production - Railway/Render PostgreSQL
+    # Production - Railway PostgreSQL (PERSISTENT STORAGE!)
     # Parse DATABASE_URL and configure with connection pooling
     DATABASES = {
         'default': dj_database_url.config(
@@ -112,14 +112,18 @@ if DATABASE_URL:
     
     # Ensure proper connection handling
     DATABASES['default']['ATOMIC_REQUESTS'] = True  # Wrap each request in a transaction
+    
+    # Log database connection for debugging
+    print(f"✅ Connected to PostgreSQL: {DATABASES['default']['NAME']}")
 else:
-    # Development - Local SQLite
+    # Development - Local SQLite for development ONLY
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
+    print("⚠️ LOCAL DEV MODE: Using SQLite")
 
 
 
