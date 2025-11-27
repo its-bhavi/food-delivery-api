@@ -193,7 +193,7 @@ def menu_item_management(request, item_id=None):
         data = request.data.copy()
         
         # Convert boolean strings to actual booleans
-        is_vegetarian = str(data.get('is_vegetarian', 'false')).lower() == 'true'
+        is_veg = str(data.get('is_veg', 'false')).lower() == 'true'
         is_available = str(data.get('is_available', 'true')).lower() == 'true'
         
         # Create menu item
@@ -202,8 +202,8 @@ def menu_item_management(request, item_id=None):
             name=data.get('name'),
             description=data.get('description', ''),
             price=float(data.get('price', 0)),
-            category=data.get('category', 'main_course'),
-            is_vegetarian=is_vegetarian,
+            preparation_time=int(data.get('preparation_time', 30)),
+            is_veg=is_veg,
             is_available=is_available,
         )
         
@@ -236,10 +236,10 @@ def menu_item_management(request, item_id=None):
             menu_item.description = data['description']
         if 'price' in data:
             menu_item.price = float(data['price'])
-        if 'category' in data:
-            menu_item.category = data['category']
-        if 'is_vegetarian' in data:
-            menu_item.is_vegetarian = str(data['is_vegetarian']).lower() == 'true'
+        if 'preparation_time' in data:
+            menu_item.preparation_time = int(data['preparation_time'])
+        if 'is_veg' in data:
+            menu_item.is_veg = str(data['is_veg']).lower() == 'true'
         if 'is_available' in data:
             menu_item.is_available = str(data['is_available']).lower() == 'true'
         if 'image' in request.FILES:
