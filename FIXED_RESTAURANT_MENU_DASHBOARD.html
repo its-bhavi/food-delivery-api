@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restaurant Management - Menu & Orders</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f5f5; }
+        
+        /* Topbar */
+        .topbar {
+            background: linear-gradient(135deg, #fc8019 0%, #e23744 100%);
+            color: white;
+            padding: 15px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .topbar h1 { font-size: 24px; }
+        .profile-btn {
+            background: rgba(255,255,255,0.2);
+            padding: 8px 15px;
+            border-radius: 8px;
+            color: white;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        
+        /* Tabs Navigation */
+        .tabs-nav {
+            background: white;
+            padding: 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .tabs-nav-inner {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            gap: 0;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 18px 30px;
+            background: transparent;
+            border: none;
+            border-bottom: 3px solid transparent;
+            font-size: 16px;
+            font-weight: 600;
+            color: #7e808c;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .tab-btn.active {
+            color: #fc8019;
+            border-bottom-color: #fc8019;
+            background: #fff8f4;
+        }
+        .tab-btn:hover {
+            background: #f8f8f8;
+        }
+        
+        /* Tab Content */
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 25px;
+        }
+        
+        /* Menu Management Tab */
+        .menu-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+        .menu-header h2 {
+            font-size: 28px;
+            color: #282c3f;
+        }
+        .btn-add-menu {
+            padding: 12px 25px;
+            background: #fc8019;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 15px;
+        }
+        .btn-add-menu:hover {
+            background: #e67316;
+        }
+        
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        .menu-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: transform 0.3s;
+        }
+        .menu-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        }
+        .menu-image-box {
+            width: 100%;
+            height: 200px;
+            background: #f0f0f0;
+            position: relative;
+            overflow: hidden;
+        }
+        .menu-image-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .no-menu-image {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            background: linear-gradient(135deg, #fc8019 0%, #e23744 100%);
+            color: white;
+            font-size: 48px;
+        }
+        .menu-info {
+            padding: 20px;
+        }
+        .menu-name {
+            font-size: 18px;
+            font-weight: 700;
+            color: #282c3f;
+            margin-bottom: 8px;
+        }
+        .menu-desc {
+            font-size: 14px;
+            color: #7e808c;
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+        .menu-price {
+            font-size: 22px;
+            font-weight: 700;
+            color: #27ae60;
+            margin-bottom: 15px;
+        }
+        .menu-badges {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        .badge {
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .badge-veg {
+            background: #d4edda;
+            color: #27ae60;
+        }
+        .badge-nonveg {
+            background: #f8d7da;
+            color: #e74c3c;
+        }
+        .badge-available {
+            background: #d1ecf1;
+            color: #17a2b8;
+        }
+        .badge-unavailable {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .menu-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .btn-edit, .btn-delete {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .btn-edit {
+            background: #3498db;
+            color: white;
+        }
+        .btn-delete {
+            background: #e74c3c;
+            color: white;
+        }
+        
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            z-index: 1000;
+            overflow-y: auto;
+        }
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            max-width: 600px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+        .modal-header {
+            background: linear-gradient(135deg, #fc8019 0%, #e23744 100%);
+            color: white;
+            padding: 20px 25px;
+            border-radius: 16px 16px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-header h3 {
+            font-size: 22px;
+        }
+        .modal-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 28px;
+            cursor: pointer;
+            line-height: 1;
+        }
+        .modal-body {
+            padding: 25px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #282c3f;
+            font-size: 14px;
+        }
+        .form-group input, 
+        .form-group textarea, 
+        .form-group select {
+            width: 100%;
+            padding: 12px 14px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 15px;
+            font-family: inherit;
+            transition: border-color 0.3s;
+        }
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #fc8019;
+        }
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+            margin: 0;
+        }
+        .btn-submit {
+            width: 100%;
+            padding: 14px;
+            background: #fc8019;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .btn-submit:hover {
+            background: #e67316;
+        }
+        .btn-submit:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            background: white;
+            border-radius: 12px;
+        }
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+        .empty-state h3 {
+            font-size: 24px;
+            color: #282c3f;
+            margin-bottom: 10px;
+        }
+        .empty-state p {
+            color: #7e808c;
+            margin-bottom: 20px;
+        }
+        
+        /* Alert */
+        .alert {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <!-- Topbar -->
+    <div class="topbar">
+        <h1>🍽️ Restaurant Dashboard</h1>
+        <a href="/restaurant-profile/" class="profile-btn">📝 Edit Profile</a>
+    </div>
+    
+    <!-- Tabs Navigation -->
+    <div class="tabs-nav">
+        <div class="tabs-nav-inner">
+            <button class="tab-btn active" data-tab="menu">📋 Menu Management</button>
+            <button class="tab-btn" data-tab="orders">📦 Orders</button>
+        </div>
+    </div>
+    
+    <!-- Tab: Menu Management -->
+    <div id="menu-tab" class="tab-content active">
+        <div class="container">
+            <div class="menu-header">
+                <h2>🍔 Your Menu Items</h2>
+                <button class="btn-add-menu" onclick="openAddMenuModal()">+ Add New Item</button>
+            </div>
+            
+            <div id="menu-alert"></div>
+            <div id="menu-grid" class="menu-grid">
+                <!-- Menu items will load here -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- Tab: Orders (Placeholder - you can move existing order code here) -->
+    <div id="orders-tab" class="tab-content">
+        <div class="container">
+            <h2 style="margin-bottom: 20px;">📦 Recent Orders</h2>
+            <p style="padding: 40px; text-align: center; background: white; border-radius: 12px;">
+                Your existing order management code can be placed here. See FIXED_4_restaurant_dashboard.html for the orders code.
+            </p>
+        </div>
+    </div>
+    
+    <!-- Add/Edit Menu Item Modal -->
+    <div id="menu-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title">🍕 Add Menu Item</h3>
+                <button class="modal-close" onclick="closeMenuModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="modal-alert"></div>
+                <form id="menu-form" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label>Item Name *</label>
+                        <input type="text" id="item-name" placeholder="e.g., Margherita Pizza" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Description *</label>
+                        <textarea id="item-description" placeholder="Describe your dish..." required></textarea>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Price (₹) *</label>
+                            <input type="number" id="item-price" step="0.01" min="0" placeholder="299.00" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Preparation Time (mins)</label>
+                            <input type="number" id="item-prep-time" min="0" value="30" placeholder="30">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Item Image</label>
+                        <input type="file" id="item-image" accept="image/*">
+                        <small style="color: #7e808c;">Upload a delicious photo of your dish!</small>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="item-is-veg" checked>
+                                <label for="item-is-veg" style="margin: 0;">🥗 Vegetarian</label>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="item-is-available" checked>
+                                <label for="item-is-available" style="margin: 0;">✅ Available</label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn-submit" id="submit-btn">Add Menu Item</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const API_BASE_URL = 'https://food-delivery-api-production-1d00.up.railway.app/api';
+        let currentEditingId = null;
+        
+        // Tab Switching
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                // Remove active from all tabs
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                
+                // Add active to clicked tab
+                this.classList.add('active');
+                const tabName = this.getAttribute('data-tab');
+                document.getElementById(`${tabName}-tab`).classList.add('active');
+            });
+        });
+        
+        // Load menu items on page load
+        window.addEventListener('DOMContentLoaded', loadMenuItems);
+        
+        async function loadMenuItems() {
+            const token = localStorage.getItem('access_token');
+            if (!token) {
+                window.location.href = '/login/';
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/vendors/menu/`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (!response.ok) throw new Error('Failed to load menu');
+                
+                const items = await response.json();
+                displayMenuItems(items);
+                
+            } catch (error) {
+                console.error('Error loading menu:', error);
+                showAlert('menu-alert', 'Failed to load menu items. Please try again.', 'error');
+            }
+        }
+        
+        function displayMenuItems(items) {
+            const grid = document.getElementById('menu-grid');
+            
+            if (!items || items.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state" style="grid-column: 1/-1;">
+                        <div class="empty-state-icon">🍽️</div>
+                        <h3>No Menu Items Yet</h3>
+                        <p>Start building your menu by adding your first delicious item!</p>
+                        <button class="btn-add-menu" onclick="openAddMenuModal()">+ Add First Item</button>
+                    </div>
+                `;
+                return;
+            }
+            
+            grid.innerHTML = items.map(item => {
+                const imageUrl = item.image_url || item.image;
+                return `
+                    <div class="menu-card">
+                        <div class="menu-image-box">
+                            ${imageUrl ? 
+                                `<img src="${imageUrl}" alt="${item.name}" onerror="this.parentElement.innerHTML='<div class=\\'no-menu-image\\'>🍽️</div>';">` :
+                                '<div class="no-menu-image">🍽️</div>'
+                            }
+                        </div>
+                        <div class="menu-info">
+                            <div class="menu-name">${item.name}</div>
+                            <div class="menu-desc">${item.description}</div>
+                            <div class="menu-price">₹${parseFloat(item.price).toFixed(2)}</div>
+                            <div class="menu-badges">
+                                <span class="badge ${item.is_veg ? 'badge-veg' : 'badge-nonveg'}">
+                                    ${item.is_veg ? '🥗 Veg' : '🍖 Non-Veg'}
+                                </span>
+                                <span class="badge ${item.is_available ? 'badge-available' : 'badge-unavailable'}">
+                                    ${item.is_available ? '✅ Available' : '❌ Unavailable'}
+                                </span>
+                            </div>
+                            <div class="menu-actions">
+                                <button class="btn-edit" onclick="editMenuItem(${item.id})">✏️ Edit</button>
+                                <button class="btn-delete" onclick="deleteMenuItem(${item.id})">🗑️ Delete</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function openAddMenuModal() {
+            currentEditingId = null;
+            document.getElementById('modal-title').textContent = '🍕 Add Menu Item';
+            document.getElementById('submit-btn').textContent = 'Add Menu Item';
+            document.getElementById('menu-form').reset();
+            document.getElementById('menu-modal').classList.add('active');
+        }
+        
+        function closeMenuModal() {
+            document.getElementById('menu-modal').classList.remove('active');
+            document.getElementById('modal-alert').innerHTML = '';
+        }
+        
+        async function editMenuItem(id) {
+            const token = localStorage.getItem('access_token');
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/vendors/menu/${id}/`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (!response.ok) throw new Error('Failed to load item');
+                
+                const item = await response.json();
+                
+                currentEditingId = id;
+                document.getElementById('modal-title').textContent = '✏️ Edit Menu Item';
+                document.getElementById('submit-btn').textContent = 'Update Menu Item';
+                
+                document.getElementById('item-name').value = item.name;
+                document.getElementById('item-description').value = item.description;
+                document.getElementById('item-price').value = item.price;
+                document.getElementById('item-prep-time').value = item.preparation_time || 30;
+                document.getElementById('item-is-veg').checked = item.is_veg;
+                document.getElementById('item-is-available').checked = item.is_available;
+                
+                document.getElementById('menu-modal').classList.add('active');
+                
+            } catch (error) {
+                console.error('Error loading item:', error);
+                showAlert('menu-alert', 'Failed to load item details.', 'error');
+            }
+        }
+        
+        async function deleteMenuItem(id) {
+            if (!confirm('Are you sure you want to delete this menu item?')) return;
+            
+            const token = localStorage.getItem('access_token');
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/vendors/menu/${id}/`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (!response.ok) throw new Error('Failed to delete');
+                
+                showAlert('menu-alert', 'Menu item deleted successfully!', 'success');
+                loadMenuItems();
+                
+            } catch (error) {
+                console.error('Error deleting item:', error);
+                showAlert('menu-alert', 'Failed to delete menu item.', 'error');
+            }
+        }
+        
+        document.getElementById('menu-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const token = localStorage.getItem('access_token');
+            const submitBtn = document.getElementById('submit-btn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = currentEditingId ? 'Updating...' : 'Adding...';
+            
+            const formData = new FormData();
+            formData.append('name', document.getElementById('item-name').value);
+            formData.append('description', document.getElementById('item-description').value);
+            formData.append('price', document.getElementById('item-price').value);
+            formData.append('preparation_time', document.getElementById('item-prep-time').value || 30);
+            formData.append('is_veg', document.getElementById('item-is-veg').checked);
+            formData.append('is_available', document.getElementById('item-is-available').checked);
+            
+            const imageFile = document.getElementById('item-image').files[0];
+            if (imageFile) {
+                formData.append('image', imageFile);
+            }
+            
+            try {
+                const url = currentEditingId 
+                    ? `${API_BASE_URL}/vendors/menu/${currentEditingId}/`
+                    : `${API_BASE_URL}/vendors/menu/`;
+                
+                const method = currentEditingId ? 'PUT' : 'POST';
+                
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(JSON.stringify(error));
+                }
+                
+                const successMsg = currentEditingId ? 'Menu item updated successfully!' : 'Menu item added successfully!';
+                showAlert('menu-alert', successMsg, 'success');
+                closeMenuModal();
+                loadMenuItems();
+                
+            } catch (error) {
+                console.error('Error saving menu item:', error);
+                showAlert('modal-alert', 'Failed to save menu item. Please try again.', 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = currentEditingId ? 'Update Menu Item' : 'Add Menu Item';
+            }
+        });
+        
+        function showAlert(elementId, message, type) {
+            const alertDiv = document.getElementById(elementId);
+            alertDiv.innerHTML = `
+                <div class="alert alert-${type}">
+                    ${type === 'success' ? '✅' : '❌'} ${message}
+                </div>
+            `;
+            setTimeout(() => alertDiv.innerHTML = '', 5000);
+        }
+    </script>
+</body>
+</html>

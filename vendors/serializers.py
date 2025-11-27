@@ -4,7 +4,7 @@ from .models import Restaurant, MenuCategory, MenuItem
 
 # MenuItem Serializer
 class MenuItemSerializer(serializers.ModelSerializer):
-    # Handle image field gracefully
+    # Handle image field properly with full URL
     image_url = serializers.SerializerMethodField()
     
     class Meta:
@@ -14,15 +14,24 @@ class MenuItemSerializer(serializers.ModelSerializer):
             'name',
             'description',
             'price',
-            'image_url',
+            'image',  # Include original image field
+            'image_url',  # Computed full URL
             'is_veg',
             'is_available',
             'preparation_time',
             'category',
         ]
+        read_only_fields = ['image_url']
     
     def get_image_url(self, obj):
-        # Return None for now - can add Cloudinary/S3 later
+        """Return full image URL for Railway deployment"""
+        if obj.image:
+            request = self.context.get('request')
+            if request:
+                # Build full URL (Railway public URL + media path)
+                return request.build_absolute_uri(obj.image.url)
+            # Fallback: return relative path
+            return obj.image.url
         return None
 
 
@@ -37,7 +46,7 @@ class MenuCategorySerializer(serializers.ModelSerializer):
 
 # Restaurant List Serializer (basic info)
 class RestaurantListSerializer(serializers.ModelSerializer):
-    # Temporarily exclude image to avoid media file errors on Railway
+    # Properly handle image URL with full path
     image_url = serializers.SerializerMethodField()
     
     class Meta:
@@ -45,16 +54,25 @@ class RestaurantListSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'name',
-            'image_url',
+            'image',  # Include original image field
+            'image_url',  # Computed full URL
             'rating',
             'opening_time',
             'closing_time',
             'is_active',
         ]
+        read_only_fields = ['image_url']
     
     def get_image_url(self, obj):
-        # Return placeholder or None if image doesn't exist
-        return None  # Can add real image URL later
+        """Return full image URL for Railway deployment"""
+        if obj.image:
+            request = self.context.get('request')
+            if request:
+                # Build full URL (Railway public URL + media path)
+                return request.build_absolute_uri(obj.image.url)
+            # Fallback: return relative path
+            return obj.image.url
+        return None
 
 
 # Restaurant Detail Serializer (complete info with menu)
