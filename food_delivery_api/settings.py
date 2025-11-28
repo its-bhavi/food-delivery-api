@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 from pathlib import Path
 import os
 import dj_database_url
+from decouple import config
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -23,13 +24,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-dev-key-change-in-production')
+SECRET_KEY = config('SECRET_KEY', default='django-insecure-dev-key-change-in-production')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DEBUG', 'True') == 'True'
+DEBUG = config('DEBUG', default='True') == 'True'
 
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
-
+ALLOWED_HOSTS = ['*']
 
 # Application definition
 
@@ -91,7 +91,7 @@ WSGI_APPLICATION = 'food_delivery_api.wsgi.application'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 # Database Configuration - ALWAYS use PostgreSQL on Railway
-DATABASE_URL = os.getenv('DATABASE_URL')
+DATABASE_URL = config('DATABASE_URL', default=None)
 
 if DATABASE_URL:
     # Production - Railway PostgreSQL (PERSISTENT STORAGE!)
@@ -184,8 +184,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # CORS Settings
 # CORS Configuration - Allow WordPress Domain + Railway Domain
 # Parse CORS_ALLOWED_ORIGINS from environment variable if provided
-import os
-cors_env = os.environ.get('CORS_ALLOWED_ORIGINS', '')
+cors_env = config('CORS_ALLOWED_ORIGINS', default='')
 if cors_env:
     CORS_ALLOWED_ORIGINS = [origin.strip() for origin in cors_env.split(',')]
     CORS_ALLOW_ALL_ORIGINS = False
@@ -276,7 +275,7 @@ SIMPLE_JWT = {
 
 
 # Razorpay Configuration
-RAZORPAY_KEY_ID = os.getenv('RAZORPAY_KEY_ID', 'rzp_test_Rf8SX4fcBCXLU3')
-RAZORPAY_KEY_SECRET = os.getenv('RAZORPAY_KEY_SECRET', 'oAqctnCPvGY1S4u2Uxqo6FR7')
+RAZORPAY_KEY_ID = config('RAZORPAY_KEY_ID', default='rzp_test_Rf8SX4fcBCXLU3')
+RAZORPAY_KEY_SECRET = config('RAZORPAY_KEY_SECRET', default='oAqctnCPvGY1S4u2Uxqo6FR7')
 
 
